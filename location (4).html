@@ -1,0 +1,7096 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="삼성SR">
+<meta name="theme-color" content="#080d1a">
+<title>SR 위치검색</title>
+
+<script>
+// PWA 아이콘 SVG → canvas → PNG → manifest 동적 생성
+(function() {
+  const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+    <rect width="512" height="512" rx="80" fill="#080d1a"/>
+    <circle cx="256" cy="256" r="220" fill="rgba(255,215,0,0.06)" stroke="#FFE234" stroke-width="18"/>
+    <circle cx="256" cy="256" r="220" fill="url(#g)"/>
+    <defs>
+      <radialGradient id="g" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#FFE55C" stop-opacity="0.45"/>
+        <stop offset="100%" stop-color="#FFD700" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <polygon points="256,82 277,144 342,146 292,183 311,246 256,210 201,246 220,183 170,146 235,144" fill="#FFE234"/>
+    <polygon points="138,206 159,268 224,270 174,307 193,370 138,334 83,370 102,307 52,270 117,268" fill="#FFE234"/>
+    <polygon points="374,206 395,268 460,270 410,307 429,370 374,334 319,370 338,307 288,270 353,268" fill="#FFE234"/>
+  </svg>`;
+  const b64 = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgStr)));
+
+  // apple-touch-icon
+  const link = document.createElement('link');
+  link.rel = 'apple-touch-icon';
+  link.href = b64;
+  document.head && document.head.appendChild(link);
+
+  // manifest
+  const manifest = {
+    name: 'SAMSUNG S.R 위치검색',
+    short_name: '삼성SR',
+    start_url: '.',
+    display: 'standalone',
+    background_color: '#080d1a',
+    theme_color: '#080d1a',
+    icons: [
+      {src: b64, sizes: '512x512', type: 'image/svg+xml'},
+      {src: b64, sizes: '192x192', type: 'image/svg+xml'}
+    ]
+  };
+  const mBlob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+  const mUrl = URL.createObjectURL(mBlob);
+  const mLink = document.createElement('link');
+  mLink.rel = 'manifest';
+  mLink.href = mUrl;
+  document.head && document.head.appendChild(mLink);
+})();
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;600;700&display=swap');
+/* 스플래시 */
+#splash{position:fixed;inset:0;background:#080d1a;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity .6s ease}
+#splash.hide{opacity:0;pointer-events:none}
+#splash .sp-logo{filter:drop-shadow(0 0 30px rgba(255,215,0,.6))}
+#splash .sp-title{font-family:'Orbitron',sans-serif;font-size:26px;font-weight:900;color:#fff;letter-spacing:.08em;text-shadow:0 0 20px rgba(0,212,255,.8)}
+#splash .sp-sub{font-size:12px;color:rgba(255,255,255,.35);letter-spacing:.15em}
+:root {
+  --navy:#080d1a; --navy2:#0f1628; --navy3:#1a2340;
+  --blue:#2563ff; --cyan:#00d4ff; --amber:#ffb800; --text:#eef2ff; --text2:#7788aa;
+  --border:rgba(255,255,255,0.07);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--navy);color:var(--text);font-family:'Noto Sans KR',sans-serif;overflow:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(37,99,255,0.035) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,255,0.035) 1px,transparent 1px);background-size:28px 28px;pointer-events:none;z-index:0}
+.app{position:fixed;inset:0;display:flex;flex-direction:column;z-index:1}
+
+/* 헤더 */
+.header{padding:14px 16px 12px;flex-shrink:0}
+.header-top{display:flex;flex-direction:column;align-items:stretch;gap:6px;margin-bottom:14px}
+/* 타이틀 - 위아래 두 블록 */
+.title-block1{background:linear-gradient(135deg,rgba(10,20,60,0.95),rgba(20,40,100,0.9));border:1px solid rgba(37,99,255,0.5);border-radius:12px;padding:12px 16px;font-family:'Orbitron',sans-serif;font-size:28px;font-weight:900;letter-spacing:.06em;color:#fff;text-shadow:0 0 20px rgba(0,212,255,0.9),0 0 40px rgba(37,99,255,0.5);box-shadow:0 0 24px rgba(37,99,255,0.35),inset 0 1px 0 rgba(255,255,255,0.1)}
+.title-block2{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:9px 16px;font-family:'Black Han Sans',sans-serif;font-size:20px;letter-spacing:.05em;color:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:space-between}
+.title-block2 .t2-count{font-size:12px;font-weight:700;background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.25);border-radius:20px;padding:4px 12px;color:var(--cyan);font-family:'Noto Sans KR',sans-serif;letter-spacing:0;white-space:nowrap}
+
+/* 검색창 */
+.search-wrap{position:relative}
+.search-input{width:100%;background:var(--navy2);border:1.5px solid var(--border);border-radius:14px;padding:15px 44px 15px 48px;color:var(--text);font-size:17px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none}
+.search-input:focus{border-color:rgba(37,99,255,.6);box-shadow:0 0 0 3px rgba(37,99,255,.12)}
+.search-input::placeholder{color:var(--text2)}
+.si{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text2);pointer-events:none}
+.clear-btn{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.1);border:none;border-radius:50%;width:26px;height:26px;color:var(--text2);cursor:pointer;display:none;align-items:center;justify-content:center;font-size:14px}
+.clear-btn.show{display:flex}
+
+/* 결과 */
+.results{flex:1;overflow-y:auto;padding:8px 14px 80px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.results::-webkit-scrollbar{display:none}
+
+/* 빈 화면 */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:65%;color:var(--text2);text-align:center;padding:20px}
+.empty-main{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1}
+.contact{position:fixed;bottom:0;left:0;right:0;padding:10px 16px 16px;background:linear-gradient(0deg,rgba(8,13,26,0.98) 60%,transparent);z-index:50;display:flex;align-items:center;justify-content:center}
+.contact-label{display:none}
+.contact-link{display:inline-flex;align-items:center;gap:10px;background:rgba(0,212,255,0.07);border:1px solid rgba(0,212,255,0.25);border-radius:24px;padding:10px 22px;color:var(--cyan);font-weight:700;text-decoration:none;font-size:14px;letter-spacing:.04em;transition:all .2s;box-shadow:0 0 12px rgba(0,212,255,0.1)}
+.contact-link:active{background:rgba(37,99,255,0.25)}
+.empty-icon{font-size:60px;margin-bottom:18px;filter:drop-shadow(0 0 18px rgba(0,212,255,.3))}
+.empty-title{font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px}
+.empty-sub{font-size:20px;line-height:1.7;color:var(--text2)}
+
+/* 결과 수 */
+.result-meta{font-size:12px;color:var(--text2);padding:6px 2px 10px;display:flex;align-items:center;justify-content:space-between}
+.result-meta strong{color:var(--cyan);font-weight:700}
+.result-pdf-btn{font-size:11px;font-weight:700;color:#fff;background:linear-gradient(135deg,rgba(255,100,50,.9),rgba(255,184,0,.8));border:1px solid rgba(255,184,0,.5);border-radius:14px;padding:4px 11px;cursor:pointer;white-space:nowrap;box-shadow:0 0 8px rgba(255,140,0,.25)}
+.result-pdf-btn:active{opacity:.7}
+
+/* 카드 */
+.card{background:var(--navy2);border:1px solid var(--border);border-radius:16px;margin-bottom:10px;overflow:hidden;cursor:pointer;transition:transform .12s,background .12s;animation:fadeUp .18s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.card:active{transform:scale(.975);background:var(--navy3)}
+
+/* 위치 띠 */
+.card-location{display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,rgba(37,99,255,.18),rgba(0,212,255,.10));border-bottom:1px solid rgba(0,212,255,.12);padding:13px 16px}
+.loc-icon{font-size:20px;flex-shrink:0}
+.loc-main{display:flex;align-items:center;gap:8px;flex:1;min-width:0;flex-wrap:wrap}
+.loc-text{font-size:20px;font-weight:700;font-family:'Noto Sans KR',sans-serif;color:var(--cyan);letter-spacing:.02em;text-shadow:0 0 12px rgba(0,212,255,.4);white-space:nowrap}
+.loc-mold{font-size:20px;font-weight:400;font-family:'Noto Sans KR',sans-serif;color:rgba(255,255,255,.8);white-space:nowrap}
+.loc-producer{font-size:20px;font-weight:400;font-family:'Noto Sans KR',sans-serif;color:#ffb800;white-space:nowrap;display:inline-flex;align-items:baseline;gap:3px}
+.loc-producer .prod-label{font-size:12px;color:rgba(255,184,0,.7);font-weight:600}
+.loc-empty{font-size:14px;color:var(--text2)}
+
+/* 카드 정보 */
+.card-info{padding:11px 16px 13px}
+.card-name{font-size:14px;font-weight:700;margin-bottom:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+.chip-row{display:flex;flex-wrap:wrap;gap:5px}
+.chip{display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:3px 9px;font-size:11px}
+.chip .lbl{color:var(--text2);margin-right:2px}
+.chip .val{color:var(--text);font-weight:600;font-family:monospace;font-size:17px}
+.chip.c-blue .val{color:#6ab0ff}
+.chip.c-amber .val{color:var(--amber)}
+
+/* 모달 */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);z-index:200;display:none;align-items:center;justify-content:center;padding:16px}
+.ov.on{display:flex;animation:fadeBg .15s ease}
+@keyframes fadeBg{from{opacity:0}to{opacity:1}}
+.mo{background:var(--navy2);border-radius:20px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;border:1px solid rgba(0,212,255,.18);animation:slideUp .2s ease;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+@keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.mo-handle{width:40px;height:4px;background:rgba(255,255,255,.12);border-radius:2px;margin:12px auto 0}
+.mo-body{padding:18px 18px 40px}
+
+/* 모달 큰 위치 */
+.big-loc{background:linear-gradient(135deg,rgba(37,99,255,.15),rgba(0,212,255,.1));border:1.5px solid rgba(0,212,255,.22);border-radius:16px;padding:22px;text-align:center;margin-bottom:16px}
+.big-loc-label{font-size:11px;color:var(--text2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.big-loc-val{font-size:40px;font-weight:700;font-family:'Black Han Sans',sans-serif;color:var(--cyan);text-shadow:0 0 30px rgba(0,212,255,.65);letter-spacing:.05em}
+.big-loc-empty{font-size:16px;color:var(--text2)}
+
+.mo-name{font-size:18px;font-weight:700;margin-bottom:14px;line-height:1.35}
+.mo-rows{display:flex;flex-direction:column;gap:8px}
+.mo-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px}
+.mo-row .k{font-size:12px;color:var(--text2)}
+.mo-row .v{font-size:14px;font-weight:700;font-family:monospace;color:var(--text)}
+.mo-row .v.blue{color:#6ab0ff}
+
+/* 관리자 버튼 */
+.admin-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 13px;border-radius:20px;border:none;font-size:12px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .18s;white-space:nowrap;letter-spacing:.02em}
+.admin-btn.login{background:linear-gradient(135deg,rgba(37,99,255,.25),rgba(0,212,255,.15));border:1.5px solid rgba(0,212,255,.45);color:var(--cyan);box-shadow:0 0 12px rgba(0,212,255,.2)}
+.admin-btn.login:active{background:rgba(0,212,255,.3)}
+.admin-btn.logout{background:linear-gradient(135deg,rgba(255,68,100,.22),rgba(255,120,50,.12));border:1.5px solid rgba(255,80,100,.5);color:#ff7088;box-shadow:0 0 12px rgba(255,68,100,.2);animation:adminPulse 2.2s ease-in-out infinite}
+@keyframes adminPulse{0%,100%{box-shadow:0 0 10px rgba(255,68,100,.2)}50%{box-shadow:0 0 20px rgba(255,68,100,.45)}}
+.admin-btn.logout:active{background:rgba(255,68,100,.3)}
+.admin-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.admin-btn.login .admin-dot{background:var(--cyan);box-shadow:0 0 6px var(--cyan)}
+.admin-btn.logout .admin-dot{background:#ff7088;box-shadow:0 0 6px #ff4466;animation:dotBlink 1.1s ease-in-out infinite}
+@keyframes dotBlink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* 비번 오버레이 */
+.pw-ov{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:300;display:none;align-items:center;justify-content:center}
+.pw-ov.on{display:flex;animation:fadeBg .15s ease}
+.pw-box{background:var(--navy2);border:1px solid var(--border);border-radius:20px;padding:28px 24px;width:calc(100% - 48px);max-width:320px;text-align:center}
+.pw-title{font-size:17px;font-weight:700;margin-bottom:6px}
+.pw-sub{font-size:13px;color:var(--text2);margin-bottom:20px}
+.pw-input{width:100%;background:var(--navy3);border:1.5px solid var(--border);border-radius:12px;padding:14px;color:var(--text);font-size:22px;text-align:center;letter-spacing:.3em;outline:none;font-family:monospace;-webkit-appearance:none}
+.pw-input:focus{border-color:rgba(37,99,255,.6)}
+.pw-err{font-size:13px;color:var(--red);margin-top:8px;min-height:18px}
+.pw-btns{display:flex;gap:8px;margin-top:16px}
+.pw-btn{flex:1;padding:12px;border-radius:10px;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+.pw-btn.cancel{background:rgba(255,255,255,0.06);color:var(--text2)}
+.pw-btn.confirm{background:var(--blue);color:#fff}
+
+/* 위치 수정 모달 내 */
+.edit-loc-wrap{margin-top:14px;display:none}
+.edit-loc-wrap.show{display:block}
+.mo-edit-section{background:rgba(37,99,255,.06);border:1px solid rgba(37,99,255,.2);border-radius:12px;padding:14px;animation:fadeUp .15s ease}
+.mo-edit-row{margin-bottom:10px}
+.edit-loc-input{width:100%;background:var(--navy3);border:1.5px solid rgba(37,99,255,.4);border-radius:10px;padding:12px 14px;color:var(--text);font-size:16px;font-weight:700;outline:none;font-family:monospace;-webkit-appearance:none;margin-bottom:8px;inputmode:numeric}
+.edit-loc-input:focus{border-color:var(--cyan)}
+.save-loc-btn{width:100%;padding:12px;border-radius:10px;border:none;background:var(--blue);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+.save-loc-btn:active{opacity:.8}
+
+/* 생산자 수정 영역 */
+.edit-producer-wrap{margin-top:10px;display:none}
+.edit-producer-wrap.show{display:block}
+.edit-producer-label{font-size:11px;color:var(--text2);letter-spacing:.06em;margin-bottom:6px;font-weight:600}
+.producer-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.producer-chip{padding:6px 13px;border-radius:20px;border:1.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Noto Sans KR',sans-serif;white-space:nowrap}
+.producer-chip:active,.producer-chip.active{background:rgba(0,212,255,.18);border-color:rgba(0,212,255,.55);color:var(--cyan)}
+.edit-producer-input{width:100%;background:var(--navy3);border:1.5px solid rgba(255,184,0,.35);border-radius:10px;padding:10px 14px;color:var(--text);font-size:15px;font-weight:700;outline:none;font-family:'Noto Sans KR',sans-serif;-webkit-appearance:none;margin-bottom:8px;placeholder-color:var(--text2)}
+.edit-producer-input:focus{border-color:var(--amber)}
+.save-producer-btn{width:100%;padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,rgba(255,184,0,.85),rgba(255,140,0,.8));color:#080d1a;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;letter-spacing:.02em}
+.save-producer-btn:active{opacity:.8}
+
+/* 보안관별 배지 */
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateY(60px); opacity: 0; }
+}
+  50%     { filter: drop-shadow(0 0 6px rgba(0,212,255,0.9)); }
+}
+
+
+
+
+
+
+.star-badge{display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* 변경 이력 버튼 */
+.chg-fab{position:fixed;bottom:70px;right:16px;width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,rgba(37,99,255,.85),rgba(0,212,255,.7));border:1.5px solid rgba(0,212,255,.5);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:100;box-shadow:0 0 18px rgba(0,212,255,.35);transition:transform .15s}
+.chg-fab:active{transform:scale(.9)}
+.chg-badge{position:absolute;top:-4px;right:-4px;background:#ff4466;color:#fff;font-size:10px;font-weight:700;border-radius:10px;min-width:18px;height:18px;padding:0 4px;display:none;align-items:center;justify-content:center;border:2px solid var(--navy)}
+.chg-badge.show{display:flex}
+
+/* 앱 저장 버튼 */
+.save-fab{position:fixed;bottom:70px;left:16px;width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,rgba(0,200,100,.85),rgba(0,212,255,.6));border:1.5px solid rgba(0,220,120,.5);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:100;box-shadow:0 0 18px rgba(0,200,100,.3);transition:transform .15s,opacity .2s,filter .2s}
+.save-fab:active{transform:scale(.9)}
+.save-fab.disabled{background:rgba(80,80,80,.3);border-color:rgba(255,255,255,.1);box-shadow:none;filter:grayscale(1);opacity:.35;cursor:not-allowed}
+
+/* 변경 이력 패널 */
+.chg-ov{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:250;display:none;align-items:flex-end}
+.chg-ov.on{display:flex;animation:fadeBg .15s ease}
+.chg-panel{background:var(--navy2);border-radius:24px 24px 0 0;width:100%;max-height:85vh;display:flex;flex-direction:column;border-top:1px solid rgba(0,212,255,.2);animation:slideUp .2s ease}
+.chg-handle{width:40px;height:4px;background:rgba(255,255,255,.12);border-radius:2px;margin:12px auto 6px;flex-shrink:0}
+
+/* 헤더 - 일반 모드 */
+.chg-header{display:flex;align-items:center;justify-content:space-between;padding:10px 18px 12px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06)}
+.chg-title{font-size:16px;font-weight:700;color:var(--text)}
+.chg-header-btns{display:flex;gap:8px;align-items:center}
+.chg-sel-btn{font-size:12px;color:var(--cyan);font-weight:700;padding:5px 12px;border:1px solid rgba(0,212,255,.3);border-radius:20px;cursor:pointer;background:rgba(0,212,255,.07)}
+.chg-delall-btn{font-size:12px;color:#ff6688;font-weight:700;padding:5px 12px;border:1px solid rgba(255,80,100,.25);border-radius:20px;cursor:pointer;background:rgba(255,80,100,.08)}
+
+/* 헤더 - 선택 모드 */
+.chg-sel-header{display:none;align-items:center;justify-content:space-between;padding:10px 18px 12px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06);background:rgba(37,99,255,.08)}
+.chg-sel-header.on{display:flex}
+.chg-header.hidden{display:none}
+.chg-sel-info{font-size:14px;font-weight:700;color:var(--cyan)}
+.chg-sel-actions{display:flex;gap:8px}
+.chg-sel-cancel{font-size:12px;color:var(--text2);font-weight:700;padding:5px 12px;border:1px solid rgba(255,255,255,.12);border-radius:20px;cursor:pointer;background:rgba(255,255,255,.05)}
+.chg-sel-delete{font-size:12px;color:#fff;font-weight:700;padding:5px 14px;border:none;border-radius:20px;cursor:pointer;background:#ff4466}
+.chg-sel-delete:disabled{background:rgba(255,68,102,.3);color:rgba(255,255,255,.4)}
+
+/* 전체 선택 바 */
+.chg-selall-bar{display:none;align-items:center;gap:10px;padding:8px 18px;border-bottom:1px solid rgba(255,255,255,.05);flex-shrink:0}
+.chg-selall-bar.on{display:flex}
+.chg-selall-cb{width:20px;height:20px;accent-color:var(--cyan);cursor:pointer;flex-shrink:0}
+.chg-selall-label{font-size:13px;color:var(--text2);font-weight:600}
+
+.chg-list{overflow-y:auto;padding:10px 14px 30px;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex:1}
+.chg-list::-webkit-scrollbar{display:none}
+.chg-empty{text-align:center;padding:40px 20px;color:var(--text2);font-size:14px}
+
+/* 이력 아이템 */
+.chg-item{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:13px 14px 13px 46px;margin-bottom:8px;position:relative;overflow:hidden;transition:background .15s,border-color .15s}
+.chg-item.selected{background:rgba(37,99,255,.12);border-color:rgba(37,99,255,.4)}
+.chg-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--cyan),var(--blue));border-radius:3px 0 0 3px}
+.chg-item-cb{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:20px;height:20px;accent-color:var(--cyan);cursor:pointer;display:none}
+.chg-item-cb.on{display:block}
+.chg-item-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.chg-item-id{font-size:13px;font-weight:700;color:var(--cyan);font-family:monospace}
+.chg-item-date{font-size:11px;color:var(--text2)}
+.chg-item-arrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.chg-from{font-size:15px;font-weight:700;color:rgba(255,255,255,.5);font-family:'Black Han Sans',sans-serif;text-decoration:line-through;text-decoration-color:rgba(255,100,100,.5)}
+.chg-arr{font-size:16px;color:var(--amber)}
+.chg-to{font-size:15px;font-weight:700;color:var(--cyan);font-family:'Black Han Sans',sans-serif;text-shadow:0 0 10px rgba(0,212,255,.4)}
+.chg-item-name{font-size:11px;color:var(--text2);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-top">
+      <div class="title-block1" style="display:flex;align-items:center;justify-content:center;flex-direction:row;gap:14px">
+        <div class="star-badge">
+          <svg width="48" height="48" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#FFE55C" stop-opacity="0.55"/>
+                <stop offset="100%" stop-color="#FFD700" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <circle cx="50" cy="50" r="44" stroke="#FFE234" stroke-width="5" fill="rgba(255,215,0,0.06)"/>
+            <!-- 가운데 빛 -->
+            <circle cx="50" cy="50" r="44" fill="url(#centerGlow)"/>
+            <polygon points="50.0,8.0 55.0,22.1 70.0,22.5 58.1,31.6 62.3,46.0 50.0,37.5 37.7,46.0 41.9,31.6 30.0,22.5 45.0,22.1" fill="#FFE234"/>
+            <polygon points="27.0,40.0 32.0,54.1 47.0,54.5 35.1,63.6 39.3,78.0 27.0,69.5 14.7,78.0 18.9,63.6 7.0,54.5 22.0,54.1" fill="#FFE234"/>
+            <polygon points="73.0,40.0 78.0,54.1 93.0,54.5 81.1,63.6 85.3,78.0 73.0,69.5 60.7,78.0 64.9,63.6 53.0,54.5 68.0,54.1" fill="#FFE234"/>
+          </svg>
+        </div>
+        <span>SAMSUNG S.R</span>
+      </div>
+      <div class="title-block2">
+        제품 위치 검색
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="t2-count">총 <span id="total-cnt">0</span>종</div>
+          <button class="admin-btn login" id="admin-btn" onclick="toggleEditMode()">
+            <div class="admin-dot"></div>관리자 로그인
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="search-wrap">
+      <svg class="si" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="search" inputmode="numeric" class="search-input" id="search" placeholder="금형번호 또는 부품번호 입력..." autocomplete="off" autocorrect="off" spellcheck="false" oninput="onSearch(this.value);clearTimeout(this._kbt);this._kbt=setTimeout(()=>this.blur(),3000);" onclick="this.value='';onSearch('');document.getElementById('clear-btn').style.display='none';" onkeydown="if(event.key==='Enter'){clearTimeout(this._kbt);this.blur();document.getElementById('results').scrollIntoView({behavior:'smooth'});}">
+      <button class="clear-btn" id="clear-btn" onclick="clearSearch()">✕</button>
+    </div>
+  </div>
+
+  <div class="results" id="results">
+    <div class="empty">
+      <div class="empty-main">
+        <div class="empty-icon">📍</div>
+        <div class="empty-sub">금형번호 (예: 75, 591)<br>또는 부품번호를 입력하세요</div>
+      </div>
+    </div>
+  </div>
+  <!-- 비밀번호 오버레이 -->
+  <div class="pw-ov" id="pw-ov">
+    <div class="pw-box">
+      <div class="pw-title">🔒 비밀번호 입력</div>
+      <div class="pw-sub" id="pw-sub">수정 권한이 필요합니다</div>
+      <input class="pw-input" type="password" id="pw-input" maxlength="6" inputmode="numeric" placeholder="····" oninput="pwCheck()">
+      <div class="pw-err" id="pw-err"></div>
+      <div class="pw-btns">
+        <button class="pw-btn cancel" onclick="closePw()">취소</button>
+        <button class="pw-btn confirm" onclick="confirmPw()">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 변경 이력 FAB -->
+  <div class="chg-fab" onclick="openChgPanel()" id="chg-fab">
+    🔔
+    <div class="chg-badge" id="chg-badge">0</div>
+  </div>
+
+  <!-- 생산자 관리 FAB (관리자 전용) -->
+  <div id="prod-fab" style="display:none;position:fixed;bottom:125px;right:16px;width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,rgba(255,184,0,.85),rgba(255,120,0,.7));border:1.5px solid rgba(255,184,0,.5);color:#080d1a;font-size:20px;align-items:center;justify-content:center;cursor:pointer;z-index:100;box-shadow:0 0 18px rgba(255,184,0,.35);transition:transform .15s" onclick="openProdPanel()">
+    🏭
+  </div>
+
+  <!-- 앱 저장 FAB -->
+  <div class="save-fab disabled" onclick="saveApp()" id="save-fab" title="앱 저장">
+    💾
+  </div>
+
+  <div class="contact">
+    <a class="contact-link" href="tel:01039316716">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.86 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.77 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.16 6.16l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      정창식 &nbsp;010 - 3931 - 6716
+    </a>
+  </div>
+</div>
+
+<div class="ov" id="ov" onclick="closeModal(event)">
+  <div class="mo">
+    <div class="mo-handle"></div>
+    <div class="mo-body" id="mo-body"></div>
+  </div>
+</div>
+
+<!-- 생산자 목록 관리 패널 -->
+<div class="chg-ov" id="prod-ov" onclick="if(event.target===this)closeProdPanel()">
+  <div class="chg-panel">
+    <div class="chg-handle"></div>
+    <div class="chg-header">
+      <div class="chg-title">🏭 생산자 목록 관리</div>
+      <div class="chg-delall-btn" onclick="closeProdPanel()">닫기</div>
+    </div>
+    <div style="padding:12px 16px 6px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06)">
+      <div style="display:flex;gap:8px">
+        <input id="new-producer-input" class="edit-producer-input" style="margin-bottom:0;flex:1" type="text" placeholder="새 생산자 이름 입력">
+        <button onclick="addProducerToList()" style="padding:10px 16px;border-radius:10px;border:none;background:rgba(0,212,255,.2);border:1.5px solid rgba(0,212,255,.4);color:var(--cyan);font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;font-family:'Noto Sans KR',sans-serif">+ 추가</button>
+      </div>
+    </div>
+    <div class="chg-list" id="prod-list"></div>
+  </div>
+</div>
+
+<!-- 변경 이력 패널 -->
+<div class="chg-ov" id="chg-ov" onclick="if(event.target===this)closeChgPanel()">
+  <div class="chg-panel">
+    <div class="chg-handle"></div>
+    <!-- 일반 헤더 -->
+    <div class="chg-header" id="chg-header">
+      <div class="chg-title">📋 위치 변경 이력</div>
+      <div class="chg-header-btns">
+        <div class="chg-sel-btn" onclick="enterSelectMode()">선택 삭제</div>
+        <div class="chg-delall-btn" onclick="clearAllChg()">전체 삭제</div>
+      </div>
+    </div>
+    <!-- 선택 모드 헤더 -->
+    <div class="chg-sel-header" id="chg-sel-header">
+      <div class="chg-sel-info" id="chg-sel-info">0개 선택</div>
+      <div class="chg-sel-actions">
+        <div class="chg-sel-cancel" onclick="exitSelectMode()">취소</div>
+        <button class="chg-sel-delete" id="chg-sel-delete" onclick="deleteSelected()" disabled>삭제</button>
+      </div>
+    </div>
+    <!-- 전체 선택 바 -->
+    <div class="chg-selall-bar" id="chg-selall-bar">
+      <input type="checkbox" class="chg-selall-cb" id="chg-selall-cb" onchange="toggleSelectAll(this.checked)">
+      <label class="chg-selall-label" for="chg-selall-cb">전체 선택</label>
+    </div>
+    <div class="chg-list" id="chg-list"></div>
+  </div>
+</div>
+
+<script>
+const DATA = [
+  {
+    "id": "75",
+    "name": "GROMMET",
+    "classNo": "14500509",
+    "material": "CR",
+    "location": "D2.2.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "591",
+    "name": "BUMPER_CATCH",
+    "classNo": "14501962",
+    "material": "EPDM",
+    "location": "C3.3.3",
+    "note": "",
+    "producer": "황인전"
+  },
+  {
+    "id": "62",
+    "name": "CONNECTING BELLOWS_SENSOR",
+    "classNo": "14506431",
+    "material": "CR",
+    "location": "D1.2.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "73",
+    "name": "GROMMET",
+    "classNo": "14508638",
+    "material": "CR",
+    "location": "EF.UP.4",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "151(H10)",
+    "name": "SEALING_BTM BOTTOM-DOZER,RCV HOLES",
+    "classNo": "14513783",
+    "material": "CR",
+    "location": "D2.1.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "150(H6)",
+    "name": "SEALING_BTM RCV HOSE SEAL-D13.5",
+    "classNo": "14514048",
+    "material": "CR",
+    "location": "E4.1.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "387",
+    "name": "CLAMP_ASSY RUBBER",
+    "classNo": "14518368",
+    "material": "CR",
+    "location": "D7.4.1",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "86-1",
+    "name": "SEALING_BTM RCV HOSE SEAL",
+    "classNo": "14518863",
+    "material": "CR",
+    "location": "C2.3.2",
+    "note": "성진테크",
+    "producer": ""
+  },
+  {
+    "id": "375",
+    "name": "CLAMP_RUBBER",
+    "classNo": "14528903",
+    "material": "CR",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "828",
+    "name": "GROMMET",
+    "classNo": "14529046",
+    "material": "CR",
+    "location": "D3.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "415",
+    "name": "COVER_MASTER SWITCH",
+    "classNo": "14543100",
+    "material": "CR",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "417",
+    "name": "GROMMET",
+    "classNo": "14545878",
+    "material": "CR",
+    "location": "C3.2.1",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "520",
+    "name": "SEAL_WIRE",
+    "classNo": "14553878",
+    "material": "CR",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "542",
+    "name": "PLUG_RUBBER",
+    "classNo": "14559534",
+    "material": "CR",
+    "location": "A3.1.1",
+    "note": "",
+    "producer": "김홍현"
+  },
+  {
+    "id": "533",
+    "name": "GROMMET",
+    "classNo": "14560334",
+    "material": "CR",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "573",
+    "name": "CLAMP_RUBBER",
+    "classNo": "14567405",
+    "material": "CR",
+    "location": "E4.4.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "543",
+    "name": "GROMMET",
+    "classNo": "14570362",
+    "material": "CR",
+    "location": "C4.UP.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "849",
+    "name": "PAD",
+    "classNo": "14633953",
+    "material": "CR",
+    "location": "D3.4.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "85",
+    "name": "GROMMET",
+    "classNo": "14502048",
+    "material": "CR",
+    "location": "B4.1.1",
+    "note": "",
+    "producer": "오정옥, 황인전"
+  },
+  {
+    "id": "281",
+    "name": "-",
+    "classNo": "14519528",
+    "material": "",
+    "location": "F1.3.1",
+    "note": "대덕",
+    "producer": ""
+  },
+  {
+    "id": "13-14",
+    "name": "14385740",
+    "classNo": "14385740",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "591-1",
+    "name": "14501963",
+    "classNo": "14501963",
+    "material": "",
+    "location": "C2.4.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "93(타원형)",
+    "name": "14508092",
+    "classNo": "14508092",
+    "material": "",
+    "location": "F.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "94(원형)",
+    "name": "14508093",
+    "classNo": "14508093",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "199",
+    "name": "14521825",
+    "classNo": "14521825",
+    "material": "",
+    "location": "D.13",
+    "note": "F-7",
+    "producer": ""
+  },
+  {
+    "id": "436",
+    "name": "14522402",
+    "classNo": "14522402",
+    "material": "",
+    "location": "D.12",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "207",
+    "name": "14522877",
+    "classNo": "14522877",
+    "material": "",
+    "location": "C2.4.2",
+    "note": "볼트",
+    "producer": ""
+  },
+  {
+    "id": "579",
+    "name": "14523601",
+    "classNo": "14523601",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "373",
+    "name": "14527721",
+    "classNo": "14527721",
+    "material": "",
+    "location": "C2.2.1",
+    "note": "",
+    "producer": "황인전"
+  },
+  {
+    "id": "310",
+    "name": "14529275",
+    "classNo": "14529275",
+    "material": "",
+    "location": "D1.4.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "84",
+    "name": "14529331",
+    "classNo": "14529331",
+    "material": "",
+    "location": "D4.1.1",
+    "note": "",
+    "producer": "송형목, 황인전"
+  },
+  {
+    "id": "379",
+    "name": "14533128",
+    "classNo": "14533128",
+    "material": "",
+    "location": "D3.4.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "521",
+    "name": "14553842",
+    "classNo": "14553842",
+    "material": "",
+    "location": "D1.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "526",
+    "name": "14556948",
+    "classNo": "14556948",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "527",
+    "name": "14556949",
+    "classNo": "14556949",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "532",
+    "name": "14563126",
+    "classNo": "14563126",
+    "material": "",
+    "location": "C7.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "329-1",
+    "name": "14568024",
+    "classNo": "14568024",
+    "material": "",
+    "location": "C3.3.1",
+    "note": "(구형,신형)",
+    "producer": "황인전"
+  },
+  {
+    "id": "699",
+    "name": "14680776",
+    "classNo": "14680776",
+    "material": "",
+    "location": "E8.1.1",
+    "note": "우레탄",
+    "producer": ""
+  },
+  {
+    "id": "184",
+    "name": "14571630",
+    "classNo": "14571630",
+    "material": "",
+    "location": "D3.1.1",
+    "note": "",
+    "producer": "김홍현"
+  },
+  {
+    "id": "570",
+    "name": "14574652",
+    "classNo": "14574652",
+    "material": "",
+    "location": "D5.4.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "805",
+    "name": "1010-23331",
+    "classNo": "1010-23331",
+    "material": "",
+    "location": "F.14",
+    "note": "압소바",
+    "producer": ""
+  },
+  {
+    "id": "868",
+    "name": "14587040",
+    "classNo": "14587040",
+    "material": "",
+    "location": "2층",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "652",
+    "name": "14590749",
+    "classNo": "14590749",
+    "material": "",
+    "location": "D.6",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "690",
+    "name": "14595180",
+    "classNo": "14595180",
+    "material": "",
+    "location": "F1.4.1",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "692",
+    "name": "14599636",
+    "classNo": "14599636",
+    "material": "",
+    "location": "F9.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "710",
+    "name": "14602099",
+    "classNo": "14602099",
+    "material": "",
+    "location": "D6.1.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "783",
+    "name": "14623867",
+    "classNo": "14623867",
+    "material": "",
+    "location": "F6.2.2",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "797",
+    "name": "14628940",
+    "classNo": "14628940",
+    "material": "",
+    "location": "D1.3.5",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "820",
+    "name": "14641987",
+    "classNo": "14641987",
+    "material": "",
+    "location": "D7.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "854",
+    "name": "14647685",
+    "classNo": "14647685",
+    "material": "",
+    "location": "D8.2.1",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "13-3",
+    "name": "14654628",
+    "classNo": "14654628",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-12",
+    "name": "14657056",
+    "classNo": "14657056",
+    "material": "",
+    "location": "E5.4.2",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "13-13",
+    "name": "14657057",
+    "classNo": "14657057",
+    "material": "",
+    "location": "E5.2.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-9",
+    "name": "14662088",
+    "classNo": "14662088",
+    "material": "",
+    "location": "E7.5.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-4",
+    "name": "14662313",
+    "classNo": "14662313",
+    "material": "",
+    "location": "E5.2.4",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "금문산업",
+    "name": "10-09",
+    "classNo": "10-09",
+    "material": "",
+    "location": "F1.UP.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "압소바(A/S)",
+    "name": "1010-20071",
+    "classNo": "1010-20071",
+    "material": "",
+    "location": "E.15",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "659",
+    "name": "1010-20251",
+    "classNo": "1010-20251",
+    "material": "",
+    "location": "2층창고",
+    "note": "(A/S)",
+    "producer": ""
+  },
+  {
+    "id": "894",
+    "name": "1018-00660",
+    "classNo": "1018-00660",
+    "material": "",
+    "location": "F2.UP.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "391",
+    "name": "1020-4001A",
+    "classNo": "1020-4001A",
+    "material": "",
+    "location": "F4.2.2",
+    "note": "",
+    "producer": "황인전"
+  },
+  {
+    "id": "391-1",
+    "name": "1020-4001B",
+    "classNo": "1020-4001B",
+    "material": "",
+    "location": "F4.2.1",
+    "note": "와샤 시중품 구입 사용",
+    "producer": ""
+  },
+  {
+    "id": "393",
+    "name": "1020-4046",
+    "classNo": "1020-4046",
+    "material": "",
+    "location": "F4.2.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "1038",
+    "name": "1023-02350",
+    "classNo": "1023-02350",
+    "material": "",
+    "location": "B3.UP.2",
+    "note": "신화산업",
+    "producer": ""
+  },
+  {
+    "id": "896",
+    "name": "1038-00230",
+    "classNo": "1038-00230",
+    "material": "",
+    "location": "C2.UP.3",
+    "note": "명진",
+    "producer": ""
+  },
+  {
+    "id": "667",
+    "name": "P-1/4",
+    "classNo": "P-1/4",
+    "material": "",
+    "location": "D2.UP.2",
+    "note": "현대기공",
+    "producer": ""
+  },
+  {
+    "id": "330",
+    "name": "1123-03940",
+    "classNo": "1123-03940",
+    "material": "",
+    "location": "2층창고",
+    "note": "F-7",
+    "producer": ""
+  },
+  {
+    "id": "31(A/S)",
+    "name": "1138-00300",
+    "classNo": "1138-00300",
+    "material": "",
+    "location": "C.4",
+    "note": "폐기",
+    "producer": ""
+  },
+  {
+    "id": "288",
+    "name": "1142-03960",
+    "classNo": "1142-03960",
+    "material": "",
+    "location": "D4.3.2",
+    "note": "",
+    "producer": "황인전"
+  },
+  {
+    "id": "290",
+    "name": "1142-03980",
+    "classNo": "1142-03980",
+    "material": "",
+    "location": "D5.1.1",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "244",
+    "name": "1142-30132",
+    "classNo": "1142-30132",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "268",
+    "name": "1142-30142",
+    "classNo": "1142-30142",
+    "material": "",
+    "location": "C.5상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "318",
+    "name": "1153-00300",
+    "classNo": "1153-00300",
+    "material": "",
+    "location": "D2.1.1",
+    "note": "",
+    "producer": "김홍현"
+  },
+  {
+    "id": "L-4",
+    "name": "마스킹",
+    "classNo": "마스킹",
+    "material": "",
+    "location": "E8.UP.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "69",
+    "name": "1174-58220",
+    "classNo": "1174-58220",
+    "material": "",
+    "location": "D6.1.1",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "40",
+    "name": "1174-93000",
+    "classNo": "1174-93000",
+    "material": "",
+    "location": "포장실",
+    "note": "플레이트",
+    "producer": "안호원"
+  },
+  {
+    "id": "378적색",
+    "name": "14376014",
+    "classNo": "14376014",
+    "material": "",
+    "location": "C8.4.2",
+    "note": "2503 단종",
+    "producer": ""
+  },
+  {
+    "id": "430",
+    "name": "14386351",
+    "classNo": "14386351",
+    "material": "",
+    "location": "B5.1.2",
+    "note": "",
+    "producer": "황인전"
+  },
+  {
+    "id": "431",
+    "name": "14387852",
+    "classNo": "14387852",
+    "material": "",
+    "location": "F2.2.1",
+    "note": "",
+    "producer": "김홍현"
+  },
+  {
+    "id": "788",
+    "name": "14387899",
+    "classNo": "14387899",
+    "material": "",
+    "location": "D3.2.1",
+    "note": "",
+    "producer": "황인전"
+  },
+  {
+    "id": "13-21",
+    "name": "14388835",
+    "classNo": "14388835",
+    "material": "",
+    "location": "D5.UP.3",
+    "note": "재고2개(25년6월2일)",
+    "producer": ""
+  },
+  {
+    "id": "13-196",
+    "name": "14389446",
+    "classNo": "14389446",
+    "material": "",
+    "location": "E7.2.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "86",
+    "name": "14503680",
+    "classNo": "14503680",
+    "material": "",
+    "location": "CD바닥",
+    "note": "",
+    "producer": "안호원"
+  },
+  {
+    "id": "107",
+    "name": "14504770",
+    "classNo": "14504770",
+    "material": "",
+    "location": "B1.2.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "110",
+    "name": "14505516",
+    "classNo": "14505516",
+    "material": "",
+    "location": "F5.UP.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "95",
+    "name": "14508100",
+    "classNo": "14508100",
+    "material": "",
+    "location": "D6.UP.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "123",
+    "name": "14508442",
+    "classNo": "14508442",
+    "material": "",
+    "location": "E2.UP.2",
+    "note": "2503 단종",
+    "producer": ""
+  },
+  {
+    "id": "122",
+    "name": "14508790",
+    "classNo": "14508790",
+    "material": "",
+    "location": "E.1상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "113  볼트",
+    "name": "14508848",
+    "classNo": "14508848",
+    "material": "",
+    "location": "CD6 통로",
+    "note": "H .F-2 소",
+    "producer": ""
+  },
+  {
+    "id": "113 소",
+    "name": "14508848",
+    "classNo": "14508848",
+    "material": "",
+    "location": "E4.UP.3",
+    "note": "안국",
+    "producer": ""
+  },
+  {
+    "id": "129",
+    "name": "14509621",
+    "classNo": "14509621",
+    "material": "",
+    "location": "F1.1.1",
+    "note": "",
+    "producer": "김홍현"
+  },
+  {
+    "id": "149",
+    "name": "14513937",
+    "classNo": "14513937",
+    "material": "",
+    "location": "F3.1.1",
+    "note": "",
+    "producer": "안호원, 오정옥"
+  },
+  {
+    "id": "148",
+    "name": "14514439",
+    "classNo": "14514439",
+    "material": "",
+    "location": "C4.2.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "182",
+    "name": "14518967",
+    "classNo": "14518967",
+    "material": "",
+    "location": "B3.2.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "190(H6)",
+    "name": "14519636",
+    "classNo": "14519636",
+    "material": "",
+    "location": "DC.1.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "183",
+    "name": "14519662",
+    "classNo": "14519662",
+    "material": "",
+    "location": "F..2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "198",
+    "name": "14519723",
+    "classNo": "14519723",
+    "material": "",
+    "location": "B.3상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "628",
+    "name": "14519744",
+    "classNo": "14519744",
+    "material": "",
+    "location": "F1.2.3",
+    "note": "현대티엠씨",
+    "producer": ""
+  },
+  {
+    "id": "191(H10)",
+    "name": "14520262",
+    "classNo": "14520262",
+    "material": "",
+    "location": "D8.2.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "196",
+    "name": "14520756",
+    "classNo": "14520756",
+    "material": "",
+    "location": "F2.1.1",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "194",
+    "name": "14521160",
+    "classNo": "14521160",
+    "material": "",
+    "location": "C5.UP.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "188",
+    "name": "14521267",
+    "classNo": "14521267",
+    "material": "",
+    "location": "D3.UP.4",
+    "note": "",
+    "producer": "황인전"
+  },
+  {
+    "id": "468",
+    "name": "14552154",
+    "classNo": "14552154",
+    "material": "",
+    "location": "A2.2.1",
+    "note": "",
+    "producer": "황인전"
+  },
+  {
+    "id": "814",
+    "name": "14522213",
+    "classNo": "14522213",
+    "material": "",
+    "location": "A2.1.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "369",
+    "name": "14522324",
+    "classNo": "14522324",
+    "material": "",
+    "location": "E8.1.2",
+    "note": "우레탄",
+    "producer": ""
+  },
+  {
+    "id": "181",
+    "name": "14522543",
+    "classNo": "14522543",
+    "material": "",
+    "location": "D.7상",
+    "note": "",
+    "producer": "안호원"
+  },
+  {
+    "id": "217",
+    "name": "14523621",
+    "classNo": "14523621",
+    "material": "",
+    "location": "E.5",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "218",
+    "name": "14523765",
+    "classNo": "14523765",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "224",
+    "name": "14524163",
+    "classNo": "14524163",
+    "material": "",
+    "location": "D4.2.1",
+    "note": "",
+    "producer": "오정옥, 황인전"
+  },
+  {
+    "id": "225",
+    "name": "14524164",
+    "classNo": "14524164",
+    "material": "",
+    "location": "A1.3.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "221",
+    "name": "14524201",
+    "classNo": "14524201",
+    "material": "",
+    "location": "C5.UP.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "367",
+    "name": "14524493",
+    "classNo": "14524493",
+    "material": "",
+    "location": "F3.2.1",
+    "note": "",
+    "producer": "김홍현"
+  },
+  {
+    "id": "368",
+    "name": "14524494",
+    "classNo": "14524494",
+    "material": "",
+    "location": "A3.2.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "283",
+    "name": "14525184",
+    "classNo": "14525184",
+    "material": "",
+    "location": "EF.5.3",
+    "note": "안국",
+    "producer": "오정옥"
+  },
+  {
+    "id": "282",
+    "name": "14525206",
+    "classNo": "14525206",
+    "material": "",
+    "location": "EF4.2",
+    "note": "안국",
+    "producer": "오정옥"
+  },
+  {
+    "id": "646",
+    "name": "14525600",
+    "classNo": "14525600",
+    "material": "",
+    "location": "B1.UP.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "370",
+    "name": "14526656",
+    "classNo": "14526656",
+    "material": "",
+    "location": "C8.2.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "92",
+    "name": "14527410",
+    "classNo": "14527410",
+    "material": "",
+    "location": "B2.UP.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "329",
+    "name": "14527458",
+    "classNo": "14527458",
+    "material": "",
+    "location": "CD6 통로",
+    "note": "",
+    "producer": "황인전"
+  },
+  {
+    "id": "277",
+    "name": "14527630",
+    "classNo": "14527630",
+    "material": "",
+    "location": "F3.UP.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "278",
+    "name": "14527631",
+    "classNo": "14527631",
+    "material": "",
+    "location": "F3.UP.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "372",
+    "name": "14527900",
+    "classNo": "14527900",
+    "material": "",
+    "location": "D5.1.2",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "319",
+    "name": "14528371",
+    "classNo": "14528371",
+    "material": "",
+    "location": "E.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "320",
+    "name": "14528372",
+    "classNo": "14528372",
+    "material": "",
+    "location": "E.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "197",
+    "name": "14528848",
+    "classNo": "14528848",
+    "material": "",
+    "location": "B1.UP.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "374",
+    "name": "14528851",
+    "classNo": "14528851",
+    "material": "",
+    "location": "D4.UP.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "247",
+    "name": "14529107",
+    "classNo": "14529107",
+    "material": "",
+    "location": "C8.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "258",
+    "name": "14529112",
+    "classNo": "14529112",
+    "material": "",
+    "location": "A2.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "348",
+    "name": "14529122",
+    "classNo": "14529122",
+    "material": "",
+    "location": "F7.2.1",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "317",
+    "name": "14529315",
+    "classNo": "14529315",
+    "material": "",
+    "location": "C7.2.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "65",
+    "name": "14529321",
+    "classNo": "14529321",
+    "material": "",
+    "location": "E.4상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "255",
+    "name": "14529325",
+    "classNo": "14529325",
+    "material": "",
+    "location": "F7.1.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "227",
+    "name": "14529350",
+    "classNo": "14529350",
+    "material": "",
+    "location": "B3.3.1",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "993",
+    "name": "14529399",
+    "classNo": "14529399",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "381",
+    "name": "14529928",
+    "classNo": "14529928",
+    "material": "",
+    "location": "D5.3.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "845",
+    "name": "14531002",
+    "classNo": "14531002",
+    "material": "",
+    "location": "B2.1.1",
+    "note": "",
+    "producer": "김홍현"
+  },
+  {
+    "id": "64",
+    "name": "14531135",
+    "classNo": "14531135",
+    "material": "",
+    "location": "D2.2.2",
+    "note": "",
+    "producer": "안호원, 황인전"
+  },
+  {
+    "id": "376",
+    "name": "14531670",
+    "classNo": "14531670",
+    "material": "",
+    "location": "D6.2.1",
+    "note": "",
+    "producer": "김홍현"
+  },
+  {
+    "id": "377",
+    "name": "14531677",
+    "classNo": "14531677",
+    "material": "",
+    "location": "A3.3.1",
+    "note": "",
+    "producer": "안호원"
+  },
+  {
+    "id": "383",
+    "name": "14535484",
+    "classNo": "14535484",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "386",
+    "name": "14536108",
+    "classNo": "14536108",
+    "material": "",
+    "location": "D7.2.1",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "395",
+    "name": "14537344",
+    "classNo": "14537344",
+    "material": "",
+    "location": "C2.3.1",
+    "note": "성원",
+    "producer": "황인전"
+  },
+  {
+    "id": "388",
+    "name": "14537470",
+    "classNo": "14537470",
+    "material": "",
+    "location": "E1.1.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "396",
+    "name": "14539233",
+    "classNo": "14539233",
+    "material": "",
+    "location": "DC.3.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "400",
+    "name": "14539436",
+    "classNo": "14539436",
+    "material": "",
+    "location": "D.5상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "412",
+    "name": "14542660",
+    "classNo": "14542660",
+    "material": "",
+    "location": "D5.4.4",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "413",
+    "name": "14542661",
+    "classNo": "14542661",
+    "material": "",
+    "location": "C4.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "414",
+    "name": "14542667",
+    "classNo": "14542667",
+    "material": "",
+    "location": "C8.4.1",
+    "note": "가스겟",
+    "producer": ""
+  },
+  {
+    "id": "134大",
+    "name": "14547862",
+    "classNo": "14547862",
+    "material": "",
+    "location": "2층창고",
+    "note": "콤비아벨트",
+    "producer": ""
+  },
+  {
+    "id": "427",
+    "name": "14548197",
+    "classNo": "14548197",
+    "material": "",
+    "location": "D7.1.1",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "134中",
+    "name": "14548471",
+    "classNo": "14548471",
+    "material": "",
+    "location": "2층창고",
+    "note": "콤비아벨트",
+    "producer": ""
+  },
+  {
+    "id": "486",
+    "name": "14549559",
+    "classNo": "14549559",
+    "material": "",
+    "location": "B3.2.2",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "13-40",
+    "name": "14551453",
+    "classNo": "14551453",
+    "material": "",
+    "location": "E6.2.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "519",
+    "name": "14553818",
+    "classNo": "14553818",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "523",
+    "name": "14553863",
+    "classNo": "14553863",
+    "material": "",
+    "location": "B1.1.1",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "13-111",
+    "name": "14555659",
+    "classNo": "14555659",
+    "material": "",
+    "location": "E3.3.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "515",
+    "name": "14555823",
+    "classNo": "14555823",
+    "material": "",
+    "location": "A.5",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "528(H6)",
+    "name": "14556481",
+    "classNo": "14556481",
+    "material": "",
+    "location": "C.1상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "528-1(H-10)",
+    "name": "14556484",
+    "classNo": "14556484",
+    "material": "",
+    "location": "C.1상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "494",
+    "name": "14557454",
+    "classNo": "14557454",
+    "material": "",
+    "location": "D2.3.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "550",
+    "name": "14557515",
+    "classNo": "14557515",
+    "material": "",
+    "location": "D3.1.2",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "491",
+    "name": "14558790",
+    "classNo": "14558790",
+    "material": "",
+    "location": "D8.UP.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-22",
+    "name": "14559390",
+    "classNo": "14559390",
+    "material": "",
+    "location": "E.7",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "531",
+    "name": "14560332",
+    "classNo": "14560332",
+    "material": "",
+    "location": "F.8",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "536",
+    "name": "14560831",
+    "classNo": "14560831",
+    "material": "",
+    "location": "F2.UP.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "529",
+    "name": "14562242",
+    "classNo": "14562242",
+    "material": "",
+    "location": "A1.7상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "530",
+    "name": "14563127",
+    "classNo": "14563127",
+    "material": "",
+    "location": "C7.2.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "572",
+    "name": "14564469",
+    "classNo": "14564469",
+    "material": "",
+    "location": "A1.7상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "538",
+    "name": "14566472",
+    "classNo": "14566472",
+    "material": "",
+    "location": "B1.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "574",
+    "name": "14567478",
+    "classNo": "14567478",
+    "material": "",
+    "location": "C5.1.1",
+    "note": "",
+    "producer": "안호원"
+  },
+  {
+    "id": "557",
+    "name": "14569410",
+    "classNo": "14569410",
+    "material": "",
+    "location": "D4.UP.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "564小",
+    "name": "14569808",
+    "classNo": "14569808",
+    "material": "",
+    "location": "F.9상",
+    "note": "19.7.23 이후 발주x",
+    "producer": ""
+  },
+  {
+    "id": "565大",
+    "name": "14569809",
+    "classNo": "14569809",
+    "material": "",
+    "location": "F.9상",
+    "note": "19.7.23 이후 발주x",
+    "producer": ""
+  },
+  {
+    "id": "576",
+    "name": "14573255",
+    "classNo": "14573255",
+    "material": "",
+    "location": "C7.3.2",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "566",
+    "name": "14574395",
+    "classNo": "14574395",
+    "material": "",
+    "location": "B.1상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "167",
+    "name": "14576417",
+    "classNo": "14576417",
+    "material": "",
+    "location": "D8.3.1",
+    "note": "",
+    "producer": "김홍현, 안호원"
+  },
+  {
+    "id": "544",
+    "name": "14577233",
+    "classNo": "14577233",
+    "material": "",
+    "location": "E1.UP.2",
+    "note": "안국",
+    "producer": ""
+  },
+  {
+    "id": "87",
+    "name": "14577527",
+    "classNo": "14577527",
+    "material": "",
+    "location": "B.1상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "725",
+    "name": "14577825",
+    "classNo": "14577825",
+    "material": "",
+    "location": "F10.2.1",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "445",
+    "name": "14578713",
+    "classNo": "14578713",
+    "material": "",
+    "location": "E2.1.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "446",
+    "name": "14578719",
+    "classNo": "14578719",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "589",
+    "name": "14579323",
+    "classNo": "14579323",
+    "material": "",
+    "location": "E2.3.1",
+    "note": "",
+    "producer": "황인전"
+  },
+  {
+    "id": "90",
+    "name": "14579372",
+    "classNo": "14579372",
+    "material": "",
+    "location": "F3.4.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "578",
+    "name": "14579710",
+    "classNo": "14579710",
+    "material": "",
+    "location": "E1.4.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "707",
+    "name": "14580064",
+    "classNo": "14580064",
+    "material": "",
+    "location": "E4.2.2",
+    "note": "MC 청색",
+    "producer": ""
+  },
+  {
+    "id": "540",
+    "name": "14585116",
+    "classNo": "14585116",
+    "material": "",
+    "location": "C7.1.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "867",
+    "name": "14587039",
+    "classNo": "14587039",
+    "material": "",
+    "location": "2층창고",
+    "note": "상단",
+    "producer": ""
+  },
+  {
+    "id": "433(A/S)",
+    "name": "14587988",
+    "classNo": "14587988",
+    "material": "",
+    "location": "C.4상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "672",
+    "name": "14588748",
+    "classNo": "14588748",
+    "material": "",
+    "location": "E4.2.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "643",
+    "name": "14590694",
+    "classNo": "14590694",
+    "material": "",
+    "location": "C.4상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-51",
+    "name": "14591544",
+    "classNo": "14591544",
+    "material": "",
+    "location": "E6.4.1",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "653",
+    "name": "14593150",
+    "classNo": "14593150",
+    "material": "",
+    "location": "D8.4.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "654",
+    "name": "14593151",
+    "classNo": "14593151",
+    "material": "",
+    "location": "C8.4.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "641",
+    "name": "14593522",
+    "classNo": "14593522",
+    "material": "",
+    "location": "C.3상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "655",
+    "name": "14595250",
+    "classNo": "14595250",
+    "material": "",
+    "location": "B.6상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "656",
+    "name": "14595251",
+    "classNo": "14595251",
+    "material": "",
+    "location": "D.7",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "657",
+    "name": "14595252",
+    "classNo": "14595252",
+    "material": "",
+    "location": "C.6상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "650",
+    "name": "14595739",
+    "classNo": "14595739",
+    "material": "",
+    "location": "F1.UP.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "645",
+    "name": "14596483",
+    "classNo": "14596483",
+    "material": "",
+    "location": "A1.2.1",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "736",
+    "name": "14596874",
+    "classNo": "14596874",
+    "material": "",
+    "location": "E5.5.4",
+    "note": "",
+    "producer": "우대웅"
+  },
+  {
+    "id": "677",
+    "name": "14597396",
+    "classNo": "14597396",
+    "material": "",
+    "location": "B.4상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "658",
+    "name": "14597400",
+    "classNo": "14597400",
+    "material": "",
+    "location": "E1.4.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "678",
+    "name": "14597414",
+    "classNo": "14597414",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "695",
+    "name": "14598449",
+    "classNo": "14598449",
+    "material": "",
+    "location": "E8.4.1",
+    "note": "696동일품(696긴것)",
+    "producer": ""
+  },
+  {
+    "id": "696",
+    "name": "14598450",
+    "classNo": "14598450",
+    "material": "",
+    "location": "B1.3.2",
+    "note": "695동일품(696긴것)",
+    "producer": ""
+  },
+  {
+    "id": "691",
+    "name": "14598517",
+    "classNo": "14598517",
+    "material": "",
+    "location": "E5.1.1",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "701",
+    "name": "14600825",
+    "classNo": "14600825",
+    "material": "",
+    "location": "F.12상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "705",
+    "name": "14601483",
+    "classNo": "14601483",
+    "material": "",
+    "location": "A1.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "723",
+    "name": "14602645",
+    "classNo": "14602645",
+    "material": "",
+    "location": "B.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "737",
+    "name": "14604862",
+    "classNo": "14604862",
+    "material": "",
+    "location": "F5.3.3",
+    "note": "",
+    "producer": "우대웅"
+  },
+  {
+    "id": "740",
+    "name": "14606452",
+    "classNo": "14606452",
+    "material": "",
+    "location": "D8.4.1",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "743",
+    "name": "14608615",
+    "classNo": "14608615",
+    "material": "",
+    "location": "B4C.3상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "794",
+    "name": "14626468",
+    "classNo": "14626468",
+    "material": "",
+    "location": "배합창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "763",
+    "name": "14610381",
+    "classNo": "14610381",
+    "material": "",
+    "location": "C8.1.2",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "764",
+    "name": "14611654",
+    "classNo": "14611654",
+    "material": "",
+    "location": "DC.2.2",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "779",
+    "name": "14612761",
+    "classNo": "14612761",
+    "material": "",
+    "location": "C2.4.4",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "768",
+    "name": "14613098",
+    "classNo": "14613098",
+    "material": "",
+    "location": "B3.UP.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "777",
+    "name": "14613373",
+    "classNo": "14613373",
+    "material": "",
+    "location": "F7.1.2",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "776",
+    "name": "14614039",
+    "classNo": "14614039",
+    "material": "",
+    "location": "A1.2.2",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "769",
+    "name": "14614127",
+    "classNo": "14614127",
+    "material": "",
+    "location": "D5.2.2",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "778",
+    "name": "14615367",
+    "classNo": "14615367",
+    "material": "",
+    "location": "C2.UP.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "774",
+    "name": "14616707",
+    "classNo": "14616707",
+    "material": "",
+    "location": "F6.3.3",
+    "note": "",
+    "producer": "황인전"
+  },
+  {
+    "id": "773",
+    "name": "14617007",
+    "classNo": "14617007",
+    "material": "",
+    "location": "C7.4.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "785",
+    "name": "14621080",
+    "classNo": "14621080",
+    "material": "",
+    "location": "B.1상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "782",
+    "name": "14623866",
+    "classNo": "14623866",
+    "material": "",
+    "location": "B5.1.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "771",
+    "name": "14614482",
+    "classNo": "14614482",
+    "material": "",
+    "location": "B2.UP.1",
+    "note": "레오니",
+    "producer": ""
+  },
+  {
+    "id": "789",
+    "name": "14625007",
+    "classNo": "14625007",
+    "material": "",
+    "location": "D1.4.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "786",
+    "name": "14626072",
+    "classNo": "14626072",
+    "material": "",
+    "location": "D8.1.1",
+    "note": "",
+    "producer": "김홍현, 송형목, 오정옥"
+  },
+  {
+    "id": "787",
+    "name": "14626073",
+    "classNo": "14626073",
+    "material": "",
+    "location": "B6.1.1",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "796",
+    "name": "14628667",
+    "classNo": "14628667",
+    "material": "",
+    "location": "E8.UP.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "800",
+    "name": "14628907",
+    "classNo": "14628907",
+    "material": "",
+    "location": "E1.4.2",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "833",
+    "name": "14639902",
+    "classNo": "14639902",
+    "material": "",
+    "location": "C6.1.1",
+    "note": "",
+    "producer": "송형목, 황인전"
+  },
+  {
+    "id": "822",
+    "name": "14640098",
+    "classNo": "14640098",
+    "material": "",
+    "location": "B.5상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "856",
+    "name": "14641747",
+    "classNo": "14641747",
+    "material": "",
+    "location": "B3.1.1",
+    "note": "",
+    "producer": "안호원"
+  },
+  {
+    "id": "832",
+    "name": "14644239",
+    "classNo": "14644239",
+    "material": "",
+    "location": "C2.1.1",
+    "note": "",
+    "producer": "김홍현"
+  },
+  {
+    "id": "821",
+    "name": "14645231",
+    "classNo": "14645231",
+    "material": "",
+    "location": "D1.4.4",
+    "note": "25년4월 단종",
+    "producer": ""
+  },
+  {
+    "id": "837  범퍼",
+    "name": "14645659",
+    "classNo": "14645659",
+    "material": "",
+    "location": "계단밑",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-7 범퍼",
+    "name": "14648446",
+    "classNo": "14648446",
+    "material": "",
+    "location": "배합창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-11",
+    "name": "14648562",
+    "classNo": "14648562",
+    "material": "",
+    "location": "F8.3.1",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "876",
+    "name": "14648562",
+    "classNo": "14648562",
+    "material": "",
+    "location": "B.2상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "824",
+    "name": "14639216",
+    "classNo": "14639216",
+    "material": "",
+    "location": "E4.UP.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-39",
+    "name": "14649538",
+    "classNo": "14649538",
+    "material": "",
+    "location": "E7.5.2",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "855",
+    "name": "14649940",
+    "classNo": "14649940",
+    "material": "",
+    "location": "F4.3.1",
+    "note": "",
+    "producer": "김홍현"
+  },
+  {
+    "id": "13-165",
+    "name": "14653641",
+    "classNo": "14653641",
+    "material": "",
+    "location": "F.5",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-6",
+    "name": "14654554",
+    "classNo": "14654554",
+    "material": "",
+    "location": "F9.3.2",
+    "note": "",
+    "producer": "송형목, 황인전"
+  },
+  {
+    "id": "13-2",
+    "name": "14654627",
+    "classNo": "14654627",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-5",
+    "name": "14658868",
+    "classNo": "14658868",
+    "material": "",
+    "location": "2층창고",
+    "note": "0331-34개",
+    "producer": ""
+  },
+  {
+    "id": "13-15",
+    "name": "14662089",
+    "classNo": "14662089",
+    "material": "",
+    "location": "E8.3.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-8",
+    "name": "14662754",
+    "classNo": "14662754",
+    "material": "",
+    "location": "E1.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-16",
+    "name": "14669821",
+    "classNo": "14669821",
+    "material": "",
+    "location": "E8.1.3",
+    "note": "우레탄",
+    "producer": ""
+  },
+  {
+    "id": "13-64",
+    "name": "14673593",
+    "classNo": "14673593",
+    "material": "",
+    "location": "A1.7상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-36",
+    "name": "14674155",
+    "classNo": "14674155",
+    "material": "",
+    "location": "D8.4.2",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "13-42",
+    "name": "14674266",
+    "classNo": "14674266",
+    "material": "",
+    "location": "E2.4.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-85",
+    "name": "14674308",
+    "classNo": "14674308",
+    "material": "",
+    "location": "E5.5.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-19",
+    "name": "14674591",
+    "classNo": "14674591",
+    "material": "",
+    "location": "E1.2.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-32",
+    "name": "14678859",
+    "classNo": "14678859",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-33",
+    "name": "14678860",
+    "classNo": "14678860",
+    "material": "",
+    "location": "F.14상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-23",
+    "name": "14679120",
+    "classNo": "14679120",
+    "material": "",
+    "location": "F8.1.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-30",
+    "name": "14679220",
+    "classNo": "14679220",
+    "material": "",
+    "location": "E5.4.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-34",
+    "name": "14680247",
+    "classNo": "14680247",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-41",
+    "name": "14681008",
+    "classNo": "14681008",
+    "material": "",
+    "location": "F9.4.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-49",
+    "name": "14681009",
+    "classNo": "14681009",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-224",
+    "name": "14794335",
+    "classNo": "14794335",
+    "material": "",
+    "location": "E7.1.2",
+    "note": "신규",
+    "producer": "송형목"
+  },
+  {
+    "id": "13-43",
+    "name": "14681278",
+    "classNo": "14681278",
+    "material": "",
+    "location": "F3.2.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-53",
+    "name": "14681798",
+    "classNo": "14681798",
+    "material": "",
+    "location": "F5.3.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-31",
+    "name": "14682035",
+    "classNo": "14682035",
+    "material": "",
+    "location": "E7.UP.1",
+    "note": "안국",
+    "producer": "오정옥"
+  },
+  {
+    "id": "13-47",
+    "name": "14682469",
+    "classNo": "14682469",
+    "material": "",
+    "location": "D5.2.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-48",
+    "name": "14682470",
+    "classNo": "14682470",
+    "material": "",
+    "location": "E7.5.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-27",
+    "name": "14683063",
+    "classNo": "14683063",
+    "material": "",
+    "location": "A1.7상",
+    "note": "A/S용",
+    "producer": ""
+  },
+  {
+    "id": "13-28",
+    "name": "14683985",
+    "classNo": "14683985",
+    "material": "",
+    "location": "C4.1.1",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "13-29",
+    "name": "14683986",
+    "classNo": "14683986",
+    "material": "",
+    "location": "D4.2.2",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "13-57",
+    "name": "14685163",
+    "classNo": "14685163",
+    "material": "",
+    "location": "F10.UP.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-50",
+    "name": "14685456",
+    "classNo": "14685456",
+    "material": "",
+    "location": "E6.2.2",
+    "note": "",
+    "producer": "우대웅"
+  },
+  {
+    "id": "13-60",
+    "name": "14687908",
+    "classNo": "14687908",
+    "material": "",
+    "location": "F7.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-58",
+    "name": "14688388",
+    "classNo": "14688388",
+    "material": "",
+    "location": "E4.2.1",
+    "note": "청색MC",
+    "producer": ""
+  },
+  {
+    "id": "13-59",
+    "name": "14689894",
+    "classNo": "14689894",
+    "material": "",
+    "location": "E5.2.5",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-72",
+    "name": "14691327",
+    "classNo": "14691327",
+    "material": "",
+    "location": "E5.5.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-71",
+    "name": "14691329",
+    "classNo": "14691329",
+    "material": "",
+    "location": "E5.2.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-69",
+    "name": "14691332",
+    "classNo": "14691332",
+    "material": "",
+    "location": "E8.3.3",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "13-75",
+    "name": "14691566",
+    "classNo": "14691566",
+    "material": "",
+    "location": "E5.3.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-98",
+    "name": "14693828",
+    "classNo": "14693828",
+    "material": "",
+    "location": "E8.3.4",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "13-171",
+    "name": "14748056",
+    "classNo": "14748056",
+    "material": "",
+    "location": "E7.4.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-82",
+    "name": "14694008",
+    "classNo": "14694008",
+    "material": "",
+    "location": "E6.2.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-83",
+    "name": "14694844",
+    "classNo": "14694844",
+    "material": "",
+    "location": "E5.4.4",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-84",
+    "name": "14694845",
+    "classNo": "14694845",
+    "material": "",
+    "location": "E3.1.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-80",
+    "name": "14695000",
+    "classNo": "14695000",
+    "material": "",
+    "location": "E3.1.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-79",
+    "name": "14695095",
+    "classNo": "14695095",
+    "material": "",
+    "location": "E5.4.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-106",
+    "name": "14696345",
+    "classNo": "14696345",
+    "material": "",
+    "location": "EF.3.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-103",
+    "name": "14697065",
+    "classNo": "14697065",
+    "material": "",
+    "location": "F9.4.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-104",
+    "name": "14697110",
+    "classNo": "14697110",
+    "material": "",
+    "location": "E3.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-86",
+    "name": "14697701",
+    "classNo": "14697701",
+    "material": "",
+    "location": "E7.1.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-61",
+    "name": "14697702",
+    "classNo": "14697702",
+    "material": "",
+    "location": "E5.5.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-89",
+    "name": "14698244",
+    "classNo": "14698244",
+    "material": "",
+    "location": "A1.1.1",
+    "note": "",
+    "producer": "황인전"
+  },
+  {
+    "id": "13-95",
+    "name": "14698296",
+    "classNo": "14698296",
+    "material": "",
+    "location": "E2.4.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-96",
+    "name": "14698297",
+    "classNo": "14698297",
+    "material": "",
+    "location": "C4.3.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-97",
+    "name": "14698298",
+    "classNo": "14698298",
+    "material": "",
+    "location": "EF.UP.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-87",
+    "name": "14698475",
+    "classNo": "14698475",
+    "material": "",
+    "location": "E1.5.2",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "13-88",
+    "name": "14699275",
+    "classNo": "14699275",
+    "material": "",
+    "location": "E3.4.1",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "13-93",
+    "name": "14699906",
+    "classNo": "14699906",
+    "material": "",
+    "location": "E7.4.1",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "96",
+    "name": "14701-05650",
+    "classNo": "14701-05650",
+    "material": "",
+    "location": "D2.UP.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-35-1",
+    "name": "14701336",
+    "classNo": "14701336",
+    "material": "",
+    "location": "EF.1.2",
+    "note": "3M 테이프",
+    "producer": ""
+  },
+  {
+    "id": "541-1",
+    "name": "14701656",
+    "classNo": "14701656",
+    "material": "",
+    "location": "F7.3.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-114  범퍼",
+    "name": "14704314",
+    "classNo": "14704314",
+    "material": "",
+    "location": "배합창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-115  범퍼",
+    "name": "14704391",
+    "classNo": "14704391",
+    "material": "",
+    "location": "배합창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-120",
+    "name": "14707398",
+    "classNo": "14707398",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-116",
+    "name": "14707685",
+    "classNo": "14707685",
+    "material": "",
+    "location": "C6.2.1",
+    "note": "",
+    "producer": "안호원, 이창호"
+  },
+  {
+    "id": "13-112",
+    "name": "14707984",
+    "classNo": "14707984",
+    "material": "",
+    "location": "F2.3.1",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "411-1",
+    "name": "14708397",
+    "classNo": "14708397",
+    "material": "",
+    "location": "C2.4.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-63",
+    "name": "14708705",
+    "classNo": "14708705",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-102",
+    "name": "14708706",
+    "classNo": "14708706",
+    "material": "",
+    "location": "E4.1.1",
+    "note": "13-199와 코아만 다름",
+    "producer": ""
+  },
+  {
+    "id": "13-117",
+    "name": "14712600",
+    "classNo": "14712600",
+    "material": "",
+    "location": "E3.5.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-118",
+    "name": "14713010",
+    "classNo": "14713010",
+    "material": "",
+    "location": "E2.1.3",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "13-119",
+    "name": "14714331",
+    "classNo": "14714331",
+    "material": "",
+    "location": "E3.3.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-123",
+    "name": "14716314",
+    "classNo": "14716314",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-125",
+    "name": "14716399",
+    "classNo": "14716399",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-122-1",
+    "name": "14718839",
+    "classNo": "14718839",
+    "material": "",
+    "location": "C.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-134",
+    "name": "14725304",
+    "classNo": "14725304",
+    "material": "",
+    "location": "E6.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-133",
+    "name": "14725307",
+    "classNo": "14725307",
+    "material": "",
+    "location": "E6.3.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-135",
+    "name": "14728925",
+    "classNo": "14728925",
+    "material": "",
+    "location": "E8.4.4",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-141",
+    "name": "14729096",
+    "classNo": "14729096",
+    "material": "",
+    "location": "E3.3.4",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-151",
+    "name": "14731693",
+    "classNo": "14731693",
+    "material": "",
+    "location": "E1.7상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-150",
+    "name": "14731694",
+    "classNo": "14731694",
+    "material": "",
+    "location": "E1.UP.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-140",
+    "name": "14732063",
+    "classNo": "14732063",
+    "material": "",
+    "location": "B5.2.2",
+    "note": "",
+    "producer": "송형목, 오정옥"
+  },
+  {
+    "id": "13-139",
+    "name": "14732068",
+    "classNo": "14732068",
+    "material": "",
+    "location": "E6.1.2",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "13-146",
+    "name": "14735133",
+    "classNo": "14735133",
+    "material": "",
+    "location": "F4.1.1",
+    "note": "",
+    "producer": "송형목, 오정옥"
+  },
+  {
+    "id": "13-166",
+    "name": "14737915",
+    "classNo": "14737915",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-161",
+    "name": "14742007",
+    "classNo": "14742007",
+    "material": "",
+    "location": "E2.5.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-162",
+    "name": "14746156",
+    "classNo": "14746156",
+    "material": "",
+    "location": "C8.2.2",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "13-163",
+    "name": "14746157",
+    "classNo": "14746157",
+    "material": "",
+    "location": "E2.5.1",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "13-170",
+    "name": "14746444",
+    "classNo": "14746444",
+    "material": "",
+    "location": "E7.3.3",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "13-169",
+    "name": "14754325",
+    "classNo": "14754325",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-191",
+    "name": "14761306",
+    "classNo": "14761306",
+    "material": "",
+    "location": "D6.UP.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-177",
+    "name": "14762095",
+    "classNo": "14762095",
+    "material": "",
+    "location": "E7.UP.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-179  설변",
+    "name": "14762869",
+    "classNo": "14762869",
+    "material": "",
+    "location": "설변",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-176",
+    "name": "14762937",
+    "classNo": "14762937",
+    "material": "",
+    "location": "C4.1.2",
+    "note": "",
+    "producer": "안호원, 이창호"
+  },
+  {
+    "id": "13-207",
+    "name": "14764770",
+    "classNo": "14764770",
+    "material": "",
+    "location": "E3.UP.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-208",
+    "name": "14764771",
+    "classNo": "14764771",
+    "material": "",
+    "location": "E3.UP.1",
+    "note": "컷팅",
+    "producer": ""
+  },
+  {
+    "id": "13-204",
+    "name": "14775049",
+    "classNo": "14775049",
+    "material": "",
+    "location": "F8.4.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-183",
+    "name": "14775769",
+    "classNo": "14775769",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-184",
+    "name": "14775844",
+    "classNo": "14775844",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-185",
+    "name": "14776091",
+    "classNo": "14776091",
+    "material": "",
+    "location": "2층창고",
+    "note": "재고 220EA",
+    "producer": ""
+  },
+  {
+    "id": "13-203",
+    "name": "14777173",
+    "classNo": "14777173",
+    "material": "",
+    "location": "E3.2.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-209",
+    "name": "14779920",
+    "classNo": "14779920",
+    "material": "",
+    "location": "F8.4.1",
+    "note": "",
+    "producer": "황인전"
+  },
+  {
+    "id": "13-200",
+    "name": "14783619",
+    "classNo": "14783619",
+    "material": "",
+    "location": "E1.1.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-199",
+    "name": "14783620",
+    "classNo": "14783620",
+    "material": "",
+    "location": "E2.1.1",
+    "note": "13-102 코아만 틀림",
+    "producer": "김홍현"
+  },
+  {
+    "id": "13-210",
+    "name": "14785469",
+    "classNo": "14785469",
+    "material": "",
+    "location": "F4.1.2",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "13-38",
+    "name": "14880638",
+    "classNo": "14880638",
+    "material": "",
+    "location": "E3.1.3",
+    "note": "상해전용,벌크는 K-3",
+    "producer": ""
+  },
+  {
+    "id": "136",
+    "name": "14880639",
+    "classNo": "14880639",
+    "material": "",
+    "location": "D3.2.2",
+    "note": "",
+    "producer": "황인전"
+  },
+  {
+    "id": "128",
+    "name": "14880692",
+    "classNo": "14880692",
+    "material": "",
+    "location": "F5.1.1",
+    "note": "",
+    "producer": "우대웅"
+  },
+  {
+    "id": "1008",
+    "name": "14880693",
+    "classNo": "14880693",
+    "material": "",
+    "location": "B7.1.2",
+    "note": "",
+    "producer": "우대웅"
+  },
+  {
+    "id": "952",
+    "name": "14880694",
+    "classNo": "14880694",
+    "material": "",
+    "location": "C3.1.1",
+    "note": "",
+    "producer": "우대웅"
+  },
+  {
+    "id": "112",
+    "name": "14880695",
+    "classNo": "14880695",
+    "material": "",
+    "location": "F6.1.1",
+    "note": "",
+    "producer": "우대웅"
+  },
+  {
+    "id": "405-1",
+    "name": "14881067",
+    "classNo": "14881067",
+    "material": "",
+    "location": "F10.1.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "405",
+    "name": "14881068",
+    "classNo": "14881068",
+    "material": "",
+    "location": "2층창고",
+    "note": "청사정공",
+    "producer": ""
+  },
+  {
+    "id": "831",
+    "name": "14881185",
+    "classNo": "14881185",
+    "material": "",
+    "location": "B8.1.1",
+    "note": "",
+    "producer": "우대웅"
+  },
+  {
+    "id": "590",
+    "name": "14882166",
+    "classNo": "14882166",
+    "material": "",
+    "location": "E6.1.1",
+    "note": "",
+    "producer": "오정옥, 황인전"
+  },
+  {
+    "id": "608",
+    "name": "14882277",
+    "classNo": "14882277",
+    "material": "",
+    "location": "D7.UP.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "609",
+    "name": "14882278",
+    "classNo": "14882278",
+    "material": "",
+    "location": "F6.UP.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-197",
+    "name": "14882751",
+    "classNo": "14882751",
+    "material": "",
+    "location": "D7.3.2",
+    "note": "",
+    "producer": "황인전"
+  },
+  {
+    "id": "13-1",
+    "name": "14882860",
+    "classNo": "14882860",
+    "material": "",
+    "location": "E7.3.1",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "13-37",
+    "name": "14883611",
+    "classNo": "14883611",
+    "material": "",
+    "location": "B3.3.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "157",
+    "name": "2023-01880",
+    "classNo": "2023-01880",
+    "material": "",
+    "location": "EF2,3통로",
+    "note": "",
+    "producer": "김홍현, 우대웅"
+  },
+  {
+    "id": "144",
+    "name": "2023-02450",
+    "classNo": "2023-02450",
+    "material": "",
+    "location": "EF.1.1",
+    "note": "",
+    "producer": "안호원"
+  },
+  {
+    "id": "670",
+    "name": "3/4",
+    "classNo": "3/4",
+    "material": "",
+    "location": "D2.UP.1",
+    "note": "현대기공",
+    "producer": ""
+  },
+  {
+    "id": "668",
+    "name": "3/8",
+    "classNo": "3/8",
+    "material": "",
+    "location": "D3.UP.2",
+    "note": "현대기공",
+    "producer": ""
+  },
+  {
+    "id": "977흑색",
+    "name": "3021-00170BK",
+    "classNo": "3021-00170BK",
+    "material": "",
+    "location": "C.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "977적색",
+    "name": "3021-00170RD",
+    "classNo": "3021-00170RD",
+    "material": "",
+    "location": "E2.4.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "93(회색)",
+    "name": "3214-508092",
+    "classNo": "3214-508092",
+    "material": "",
+    "location": "2층 창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": ".7/16",
+    "name": "7/16",
+    "classNo": "7/16",
+    "material": "",
+    "location": "D.4",
+    "note": "현대기공",
+    "producer": ""
+  },
+  {
+    "id": "671",
+    "name": "7/8",
+    "classNo": "7/8",
+    "material": "",
+    "location": "D3.UP.1",
+    "note": "현대기공",
+    "producer": ""
+  },
+  {
+    "id": "334",
+    "name": "7263-00041",
+    "classNo": "7263-00041",
+    "material": "",
+    "location": "E4.UP.1",
+    "note": "영동테크",
+    "producer": ""
+  },
+  {
+    "id": "9/16(현대기공)",
+    "name": "9/16",
+    "classNo": "9/16",
+    "material": "",
+    "location": "D.2",
+    "note": "현대기공",
+    "producer": ""
+  },
+  {
+    "id": "799",
+    "name": "943920",
+    "classNo": "943920",
+    "material": "",
+    "location": "D8.UP.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "178",
+    "name": "9447-02025",
+    "classNo": "9447-02025",
+    "material": "",
+    "location": "C4.2.2",
+    "note": "",
+    "producer": "황인전"
+  },
+  {
+    "id": "L-1",
+    "name": "9447-02430",
+    "classNo": "9447-02430",
+    "material": "",
+    "location": "D2.3.1",
+    "note": "대",
+    "producer": ""
+  },
+  {
+    "id": "759 A/S용",
+    "name": "9511-12230",
+    "classNo": "9511-12230",
+    "material": "",
+    "location": "B.5상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "350",
+    "name": "9511-22105",
+    "classNo": "9511-22105",
+    "material": "",
+    "location": "C1.UP.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "775",
+    "name": "9511-22125",
+    "classNo": "9511-22125",
+    "material": "",
+    "location": "C1.UP.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "316",
+    "name": "9511-22165",
+    "classNo": "9511-22165",
+    "material": "",
+    "location": "C1.UP.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "834",
+    "name": "9524-00146",
+    "classNo": "9524-00146",
+    "material": "",
+    "location": "A2.1.1",
+    "note": "",
+    "producer": "우대웅"
+  },
+  {
+    "id": "594",
+    "name": "960254",
+    "classNo": "960254",
+    "material": "",
+    "location": "B6.2.1",
+    "note": "오링",
+    "producer": "우대웅"
+  },
+  {
+    "id": "955",
+    "name": "960259",
+    "classNo": "960259",
+    "material": "",
+    "location": "F6.2.1",
+    "note": "오링",
+    "producer": "우대웅"
+  },
+  {
+    "id": "141",
+    "name": "960266",
+    "classNo": "960266",
+    "material": "",
+    "location": "B1.UP.1",
+    "note": "9511-22300",
+    "producer": "송형목, 우대웅, 황인전"
+  },
+  {
+    "id": "534",
+    "name": "961959",
+    "classNo": "961959",
+    "material": "",
+    "location": "E1.2.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "711",
+    "name": "9751-11008",
+    "classNo": "9751-11008",
+    "material": "",
+    "location": "D1.UP.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "674",
+    "name": "9751-11603",
+    "classNo": "9751-11603",
+    "material": "",
+    "location": "C8.3.2",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "605",
+    "name": "9751-12504",
+    "classNo": "9751-12504",
+    "material": "",
+    "location": "D1.3.4",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "635",
+    "name": "9751-13606",
+    "classNo": "9751-13606",
+    "material": "",
+    "location": "D7.2.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "89",
+    "name": "9751-13612",
+    "classNo": "9751-13612",
+    "material": "",
+    "location": "C5.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "675",
+    "name": "9751-15009",
+    "classNo": "9751-15009",
+    "material": "",
+    "location": "D1.1.1",
+    "note": "",
+    "producer": "황인전"
+  },
+  {
+    "id": "410",
+    "name": "9751-17008",
+    "classNo": "9751-17008",
+    "material": "",
+    "location": "C6.2.2",
+    "note": "",
+    "producer": "김홍현"
+  },
+  {
+    "id": "80",
+    "name": "9751-18518",
+    "classNo": "9751-18518",
+    "material": "",
+    "location": "D.5",
+    "note": "857 동일품",
+    "producer": ""
+  },
+  {
+    "id": "580",
+    "name": "9751-33208",
+    "classNo": "9751-33208",
+    "material": "",
+    "location": "EF5.4",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "537",
+    "name": "9751-34005",
+    "classNo": "9751-34005",
+    "material": "",
+    "location": "D5.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "432",
+    "name": "9751-34309",
+    "classNo": "9751-34309",
+    "material": "",
+    "location": "D3.4.2",
+    "note": "",
+    "producer": "우대웅"
+  },
+  {
+    "id": "563",
+    "name": "9751-11003",
+    "classNo": "9751-11003",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "179",
+    "name": "9912-30900",
+    "classNo": "9912-30900",
+    "material": "",
+    "location": "D1.UP.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "53",
+    "name": "CAP",
+    "classNo": "CAP",
+    "material": "",
+    "location": "제품없음",
+    "note": "안국",
+    "producer": "오정옥, 황인전"
+  },
+  {
+    "id": "489(문교교재)",
+    "name": "고무마개",
+    "classNo": "고무마개",
+    "material": "",
+    "location": "E.4상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "124",
+    "name": "마스킹",
+    "classNo": "마스킹",
+    "material": "",
+    "location": "E6.UP.1",
+    "note": "건화",
+    "producer": ""
+  },
+  {
+    "id": "13-100",
+    "name": "마스킹",
+    "classNo": "마스킹",
+    "material": "",
+    "location": "EF.4.3",
+    "note": "(삼진정밀)",
+    "producer": ""
+  },
+  {
+    "id": "13-101",
+    "name": "마스킹",
+    "classNo": "마스킹",
+    "material": "",
+    "location": "EF.5.2",
+    "note": "(삼진정밀)",
+    "producer": ""
+  },
+  {
+    "id": "13-202",
+    "name": "마스킹",
+    "classNo": "마스킹",
+    "material": "",
+    "location": "E.13/14",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "231",
+    "name": "마스킹",
+    "classNo": "마스킹",
+    "material": "",
+    "location": "E3.UP.3",
+    "note": "에스에이치팩",
+    "producer": ""
+  },
+  {
+    "id": "K-1",
+    "name": "마스킹",
+    "classNo": "마스킹",
+    "material": "",
+    "location": "F6.UP.3",
+    "note": "25년 4월출고2000개",
+    "producer": ""
+  },
+  {
+    "id": "K-10",
+    "name": "마스킹",
+    "classNo": "마스킹",
+    "material": "",
+    "location": "F9.UP.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "K-3",
+    "name": "마스킹",
+    "classNo": "마스킹",
+    "material": "",
+    "location": "E5.1.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "K-4",
+    "name": "마스킹",
+    "classNo": "마스킹",
+    "material": "",
+    "location": "F9.UP.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "K-5大",
+    "name": "마스킹",
+    "classNo": "마스킹",
+    "material": "",
+    "location": "F8.1.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "K-5小",
+    "name": "마스킹",
+    "classNo": "마스킹",
+    "material": "",
+    "location": "F8.1.2",
+    "note": "E4-UP-4 확인요망",
+    "producer": ""
+  },
+  {
+    "id": "K-6",
+    "name": "마스킹",
+    "classNo": "마스킹",
+    "material": "",
+    "location": "F9.UP.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "L-1(원형)",
+    "name": "마스킹",
+    "classNo": "마스킹",
+    "material": "",
+    "location": "F7.UP.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "L-1小",
+    "name": "마스킹",
+    "classNo": "마스킹",
+    "material": "",
+    "location": "F7.UP.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "L-1中",
+    "name": "마스킹",
+    "classNo": "마스킹",
+    "material": "",
+    "location": "F7.UP.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "M-12",
+    "name": "마스킹",
+    "classNo": "마스킹",
+    "material": "",
+    "location": "E8.UP.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "M-10대",
+    "name": "마스킹",
+    "classNo": "마스킹",
+    "material": "",
+    "location": "F9.1.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "M-8",
+    "name": "마스킹",
+    "classNo": "마스킹",
+    "material": "",
+    "location": "F7.UP.4",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "M-10小",
+    "name": "마스킹",
+    "classNo": "마스킹",
+    "material": "",
+    "location": "F8.UP.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "M-16大",
+    "name": "마스킹",
+    "classNo": "마스킹",
+    "material": "",
+    "location": "EF.4.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "한일정공",
+    "name": "제품3개",
+    "classNo": "제품3개",
+    "material": "",
+    "location": "C.6",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "770",
+    "name": "코리아휠",
+    "classNo": "코리아휠",
+    "material": "",
+    "location": "E.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "에스에이치팩",
+    "name": "팔레트(ㅡ/ㄷ)",
+    "classNo": "팔레트(ㅡ/ㄷ)",
+    "material": "",
+    "location": "F.15",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "187",
+    "name": "1-1/4",
+    "classNo": "1-1/4",
+    "material": "",
+    "location": "D1.UP.3",
+    "note": "현대기공",
+    "producer": ""
+  },
+  {
+    "id": "13-24   범퍼",
+    "name": "14682446",
+    "classNo": "14682446",
+    "material": "",
+    "location": "사상실",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 6Φ",
+    "name": "14508060",
+    "classNo": "14508060",
+    "material": "",
+    "location": "클Y1.4.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 8Φ",
+    "name": "14500290",
+    "classNo": "14500290",
+    "material": "",
+    "location": "클Z1.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 10Φ",
+    "name": "14500291",
+    "classNo": "14500291",
+    "material": "",
+    "location": "클Z2.1.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 12Φ",
+    "name": "14500292",
+    "classNo": "14500292",
+    "material": "",
+    "location": "클Z4.1.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 14Φ",
+    "name": "14500293",
+    "classNo": "14500293",
+    "material": "",
+    "location": "클Y1.1.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 16Φ",
+    "name": "14547764",
+    "classNo": "14547764",
+    "material": "",
+    "location": "클Z3U.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 18Φ",
+    "name": "14500294",
+    "classNo": "14500294",
+    "material": "",
+    "location": "클Z3.3.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 22Φ",
+    "name": "14500295",
+    "classNo": "14500295",
+    "material": "",
+    "location": "클Z2.1.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 24Φ",
+    "name": "14500296",
+    "classNo": "14500296",
+    "material": "",
+    "location": "클Z2.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 26Φ",
+    "name": "14547765",
+    "classNo": "14547765",
+    "material": "",
+    "location": "클Z2U.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 30Φ",
+    "name": "14500297",
+    "classNo": "14500297",
+    "material": "",
+    "location": "클Z2U.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 32Φ",
+    "name": "14539461",
+    "classNo": "14539461",
+    "material": "",
+    "location": "클Z2.3.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 33Φ",
+    "name": "14512894",
+    "classNo": "14512894",
+    "material": "",
+    "location": "클Z1.3.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 36Φ",
+    "name": "14500298",
+    "classNo": "14500298",
+    "material": "",
+    "location": "클Y1.2.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 40Φ",
+    "name": "14500299",
+    "classNo": "14500299",
+    "material": "",
+    "location": "클Y2.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 44Φ",
+    "name": "14508690",
+    "classNo": "14508690",
+    "material": "",
+    "location": "클Y2.2.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 8ΦW",
+    "name": "14532102",
+    "classNo": "14532102",
+    "material": "",
+    "location": "클Y4U.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 10ΦW",
+    "name": "14529741",
+    "classNo": "14529741",
+    "material": "",
+    "location": "클Y2.5.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 10Φ*3W",
+    "name": "14529750",
+    "classNo": "14529750",
+    "material": "",
+    "location": "클Y4.4.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 18ΦW",
+    "name": "14532534",
+    "classNo": "14532534",
+    "material": "",
+    "location": "클Z3.3.1",
+    "note": "Z2-3-3",
+    "producer": ""
+  },
+  {
+    "id": "0.8 21ΦW",
+    "name": "14575311",
+    "classNo": "14575311",
+    "material": "",
+    "location": "클Y3.4.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 22ΦW",
+    "name": "14507450",
+    "classNo": "14507450",
+    "material": "",
+    "location": "클Z3.1.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 24ΦW",
+    "name": "14508061",
+    "classNo": "14508061",
+    "material": "",
+    "location": "클Y2.4.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 30ΦW",
+    "name": "14507451",
+    "classNo": "14507451",
+    "material": "",
+    "location": "클Z3U.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "0.8 32*52",
+    "name": "14575312",
+    "classNo": "14575312",
+    "material": "",
+    "location": "클립실",
+    "note": "품절 재고없음",
+    "producer": ""
+  },
+  {
+    "id": "0.8 사각-1",
+    "name": "14565000",
+    "classNo": "14565000",
+    "material": "",
+    "location": "클Y4.5.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "1.2 16ΦW",
+    "name": "14512153",
+    "classNo": "14512153",
+    "material": "",
+    "location": "클Z3.2.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "1.2 22Φ",
+    "name": "14693868",
+    "classNo": "14693868",
+    "material": "",
+    "location": "클Y4.5.2",
+    "note": "13-99",
+    "producer": ""
+  },
+  {
+    "id": "1.2 22ΦW",
+    "name": "14515524",
+    "classNo": "14515524",
+    "material": "",
+    "location": "클Z2.2.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "1.2 22Φ*3W",
+    "name": "14565340",
+    "classNo": "14565340",
+    "material": "",
+    "location": "클Y2.4.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "1.2 30Φ",
+    "name": "14515525",
+    "classNo": "14515525",
+    "material": "",
+    "location": "클Z4.1.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "1.2 31.8Φ",
+    "name": "949997",
+    "classNo": "949997",
+    "material": "",
+    "location": "클Y3.2.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "1.2 36ΦW",
+    "name": "14578932",
+    "classNo": "14578932",
+    "material": "",
+    "location": "클Y1.4.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "1.2 40Φ",
+    "name": "14515523",
+    "classNo": "14515523",
+    "material": "",
+    "location": "클Z1.1.1",
+    "note": "Z1-2-1",
+    "producer": ""
+  },
+  {
+    "id": "1.2 44Φ",
+    "name": "973944",
+    "classNo": "973944",
+    "material": "",
+    "location": "클Y5.5.2",
+    "note": "품절 재고없음",
+    "producer": ""
+  },
+  {
+    "id": "1.2 50Φ",
+    "name": "14515521",
+    "classNo": "14515521",
+    "material": "",
+    "location": "클Z2.2.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "1.2 54Φ",
+    "name": "14566371",
+    "classNo": "14566371",
+    "material": "",
+    "location": "클Y1.5.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "1.2 60Φ",
+    "name": "14515522",
+    "classNo": "14515522",
+    "material": "",
+    "location": "클Y5.4.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "1.2 62Φ",
+    "name": "14591194",
+    "classNo": "14591194",
+    "material": "",
+    "location": "클Y1.5.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "1.2 64Φ",
+    "name": "14603700",
+    "classNo": "14603700",
+    "material": "",
+    "location": "클Y3.5.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "1.2 68Φ",
+    "name": "14562268",
+    "classNo": "14562268",
+    "material": "",
+    "location": "클Y1.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "1.2 76Φ",
+    "name": "14604982",
+    "classNo": "14604982",
+    "material": "",
+    "location": "클Y2.1.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "1.2 86Φ",
+    "name": "14582266",
+    "classNo": "14582266",
+    "material": "",
+    "location": "클.E.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "1.2 98Φ",
+    "name": "3214604982",
+    "classNo": "3214604982",
+    "material": "",
+    "location": "클.E.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "1.2 27.4R",
+    "name": "14603699",
+    "classNo": "14603699",
+    "material": "",
+    "location": "클Y4.4.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "1.2 29R",
+    "name": "14566470",
+    "classNo": "14566470",
+    "material": "",
+    "location": "클립실",
+    "note": "품절 재고없음",
+    "producer": ""
+  },
+  {
+    "id": "1.2 32R",
+    "name": "14608466",
+    "classNo": "14608466",
+    "material": "",
+    "location": "클Y5.5.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "1.2 34R",
+    "name": "14585894",
+    "classNo": "14585894",
+    "material": "",
+    "location": "클Y3.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "1.2 40.3R",
+    "name": "14574303",
+    "classNo": "14574303",
+    "material": "",
+    "location": "클Y4.2.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "1.2 42R",
+    "name": "14531166",
+    "classNo": "14531166",
+    "material": "",
+    "location": "클Y2.5.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "15.9Φ",
+    "name": "949747",
+    "classNo": "949747",
+    "material": "",
+    "location": "클.A.1",
+    "note": "13-76",
+    "producer": ""
+  },
+  {
+    "id": "744",
+    "name": "14598746",
+    "classNo": "14598746",
+    "material": "",
+    "location": "클Y3.5.2",
+    "note": "大 클립",
+    "producer": ""
+  },
+  {
+    "id": "10Φ*4W",
+    "name": "14737257",
+    "classNo": "14737257",
+    "material": "",
+    "location": "클Y3.3.2",
+    "note": "13-168",
+    "producer": ""
+  },
+  {
+    "id": "147",
+    "name": "14514580",
+    "classNo": "14514580",
+    "material": "",
+    "location": "F8.2.1",
+    "note": "",
+    "producer": "김홍현, 송형목"
+  },
+  {
+    "id": "651",
+    "name": "14590748",
+    "classNo": "14590748",
+    "material": "",
+    "location": "F5.2.1",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "664",
+    "name": "14531012",
+    "classNo": "14531012",
+    "material": "",
+    "location": "J(백색)",
+    "note": "",
+    "producer": "안호원, 이창호"
+  },
+  {
+    "id": "492",
+    "name": "14558791",
+    "classNo": "14558791",
+    "material": "",
+    "location": "E8.4.3",
+    "note": "",
+    "producer": "우대웅"
+  },
+  {
+    "id": "451-2",
+    "name": "14569411",
+    "classNo": "14569411",
+    "material": "",
+    "location": "B7.1.1",
+    "note": "",
+    "producer": "김홍현"
+  },
+  {
+    "id": "287",
+    "name": "1142-03950",
+    "classNo": "1142-03950",
+    "material": "",
+    "location": "컴퓨터옆",
+    "note": "콘즈 전용재품",
+    "producer": "안호원"
+  },
+  {
+    "id": "13-152",
+    "name": "14739590",
+    "classNo": "14739590",
+    "material": "",
+    "location": "DC.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "145",
+    "name": "2023-02480",
+    "classNo": "2023-02480",
+    "material": "",
+    "location": "F8.1.2",
+    "note": "",
+    "producer": "김홍현"
+  },
+  {
+    "id": "746",
+    "name": "14598805",
+    "classNo": "14598805",
+    "material": "",
+    "location": "D3.3.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "108",
+    "name": "14531014",
+    "classNo": "14531014",
+    "material": "",
+    "location": "포장실",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "86Φ",
+    "name": "14562266",
+    "classNo": "14562266",
+    "material": "",
+    "location": "클Y1.5.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "452",
+    "name": "14526627",
+    "classNo": "14526627",
+    "material": "",
+    "location": "E2.UP.3",
+    "note": "안국",
+    "producer": ""
+  },
+  {
+    "id": "903",
+    "name": "1071-00420",
+    "classNo": "1071-00420",
+    "material": "",
+    "location": "E8.2.2",
+    "note": "",
+    "producer": "우대웅"
+  },
+  {
+    "id": "13-174",
+    "name": "14756461",
+    "classNo": "14756461",
+    "material": "",
+    "location": "E7.4.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "419",
+    "name": "9447-03645",
+    "classNo": "9447-03645",
+    "material": "",
+    "location": "F3.3.2",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "58",
+    "name": "14531021",
+    "classNo": "14531021",
+    "material": "",
+    "location": "J(초록)",
+    "note": "",
+    "producer": "김홍현, 안호원, 이창호"
+  },
+  {
+    "id": "13-198",
+    "name": "14783609",
+    "classNo": "14783609",
+    "material": "",
+    "location": "C4.3.3",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "63",
+    "name": "14505474",
+    "classNo": "14505474",
+    "material": "",
+    "location": "D7.4.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-81",
+    "name": "14694000",
+    "classNo": "14694000",
+    "material": "",
+    "location": "E3.2.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-212",
+    "name": "14783626",
+    "classNo": "14783626",
+    "material": "",
+    "location": "E6.3.3",
+    "note": "신규품,책상앞 설변",
+    "producer": ""
+  },
+  {
+    "id": "13-220",
+    "name": "14794355",
+    "classNo": "14794355",
+    "material": "",
+    "location": "B7.2.1",
+    "note": "",
+    "producer": "안호원"
+  },
+  {
+    "id": "663",
+    "name": "14375988",
+    "classNo": "14375988",
+    "material": "",
+    "location": "J(노랑)",
+    "note": "",
+    "producer": "안호원, 이창호"
+  },
+  {
+    "id": "13-10",
+    "name": "14667029",
+    "classNo": "14667029",
+    "material": "",
+    "location": "J(노랑)",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "698-1 大",
+    "name": "14699703",
+    "classNo": "14699703",
+    "material": "",
+    "location": "C2.1.1(큰것)",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "857",
+    "name": "14882767",
+    "classNo": "14882767",
+    "material": "",
+    "location": "C5.2.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "77",
+    "name": "14503344",
+    "classNo": "14503344",
+    "material": "",
+    "location": "J(소형)",
+    "note": "",
+    "producer": "우대웅"
+  },
+  {
+    "id": "195",
+    "name": "14521198",
+    "classNo": "14521198",
+    "material": "",
+    "location": "J(파랑)",
+    "note": "",
+    "producer": "우대웅"
+  },
+  {
+    "id": "13-105",
+    "name": "14702513",
+    "classNo": "14702513",
+    "material": "",
+    "location": "E1.2.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "180",
+    "name": "14518122",
+    "classNo": "14518122",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": "안호원"
+  },
+  {
+    "id": "56",
+    "name": "14527620",
+    "classNo": "14527620",
+    "material": "",
+    "location": "E1.5.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "560",
+    "name": "990603",
+    "classNo": "990603",
+    "material": "",
+    "location": "F6.3.1",
+    "note": "",
+    "producer": "우대웅"
+  },
+  {
+    "id": "13-70",
+    "name": "14691328",
+    "classNo": "14691328",
+    "material": "",
+    "location": "E5.2.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "689",
+    "name": "14599574",
+    "classNo": "14599574",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "337",
+    "name": "14561466",
+    "classNo": "14561466",
+    "material": "",
+    "location": "F1.2.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-145",
+    "name": "14736152",
+    "classNo": "14736152",
+    "material": "",
+    "location": "C8.1.1",
+    "note": "오링",
+    "producer": "우대웅"
+  },
+  {
+    "id": "1.2 18ΦW",
+    "name": "14570737",
+    "classNo": "14570737",
+    "material": "",
+    "location": "클Y5.4.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "17.5Φ",
+    "name": "942810",
+    "classNo": "942810",
+    "material": "",
+    "location": "클.A.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-213",
+    "name": "14785269",
+    "classNo": "14785269",
+    "material": "",
+    "location": "C3.UP.1",
+    "note": "신규품",
+    "producer": ""
+  },
+  {
+    "id": "13-144",
+    "name": "14736153",
+    "classNo": "14736153",
+    "material": "",
+    "location": "E8.1.2",
+    "note": "우레탄",
+    "producer": ""
+  },
+  {
+    "id": "13-215",
+    "name": "14792226",
+    "classNo": "14792226",
+    "material": "",
+    "location": "E5.3.1",
+    "note": "신규품",
+    "producer": "송형목"
+  },
+  {
+    "id": "13-216",
+    "name": "14792225",
+    "classNo": "14792225",
+    "material": "",
+    "location": "C6.3.1",
+    "note": "",
+    "producer": "송형목"
+  },
+  {
+    "id": "13-214",
+    "name": "14882987",
+    "classNo": "14882987",
+    "material": "",
+    "location": "F6.3.2",
+    "note": "L-1(대)유사품",
+    "producer": ""
+  },
+  {
+    "id": "314",
+    "name": "14531109",
+    "classNo": "14531109",
+    "material": "",
+    "location": "BC8라인벽",
+    "note": "",
+    "producer": "이창호"
+  },
+  {
+    "id": "13-218",
+    "name": "14790747",
+    "classNo": "14790747",
+    "material": "",
+    "location": "E1.5.1",
+    "note": "2503 단종",
+    "producer": ""
+  },
+  {
+    "id": "13-219",
+    "name": "14792436",
+    "classNo": "14792436",
+    "material": "",
+    "location": "B7.2.2",
+    "note": "",
+    "producer": "송형목, 오정옥"
+  },
+  {
+    "id": "745",
+    "name": "949657",
+    "classNo": "949657",
+    "material": "",
+    "location": "2층창고",
+    "note": "벌크품.오링",
+    "producer": ""
+  },
+  {
+    "id": "13-221",
+    "name": "14778612",
+    "classNo": "14778612",
+    "material": "",
+    "location": "F5.3.1",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "13-182",
+    "name": "14775765",
+    "classNo": "14775765",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-222",
+    "name": "14795432",
+    "classNo": "14795432",
+    "material": "",
+    "location": "E3.5.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-229",
+    "name": "53513778",
+    "classNo": "53513778",
+    "material": "",
+    "location": "E2.2.1",
+    "note": "신규",
+    "producer": "송형목"
+  },
+  {
+    "id": "13-228",
+    "name": "53264721",
+    "classNo": "53264721",
+    "material": "",
+    "location": "F3.UP.3",
+    "note": "신규",
+    "producer": ""
+  },
+  {
+    "id": "13-147",
+    "name": "14688434",
+    "classNo": "14688434",
+    "material": "",
+    "location": "E4.2.2",
+    "note": "신규",
+    "producer": ""
+  },
+  {
+    "id": "13-173-1",
+    "name": "53495738",
+    "classNo": "53495738",
+    "material": "",
+    "location": "D8.3.2",
+    "note": "신규14757028(동일)",
+    "producer": ""
+  },
+  {
+    "id": "13-233",
+    "name": "53681979",
+    "classNo": "53681979",
+    "material": "",
+    "location": "B8.3.2",
+    "note": "신규 13-223 동일",
+    "producer": "황인전"
+  },
+  {
+    "id": "13-35",
+    "name": "14679462",
+    "classNo": "14679462",
+    "material": "",
+    "location": "F.15",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-234",
+    "name": "16835582",
+    "classNo": "16835582",
+    "material": "",
+    "location": "C7.4.1",
+    "note": "신규",
+    "producer": "오정옥"
+  },
+  {
+    "id": "13-243",
+    "name": "53534571",
+    "classNo": "53534571",
+    "material": "",
+    "location": "D4.3.1",
+    "note": "성진테크",
+    "producer": "황인전"
+  },
+  {
+    "id": "13-248",
+    "name": "952623",
+    "classNo": "952623",
+    "material": "",
+    "location": "클Y3.1.1",
+    "note": "신규",
+    "producer": ""
+  },
+  {
+    "id": "13-249",
+    "name": "952624",
+    "classNo": "952624",
+    "material": "",
+    "location": "클Y3.1.2",
+    "note": "신규",
+    "producer": ""
+  },
+  {
+    "id": "13-244",
+    "name": "54143079",
+    "classNo": "54143079",
+    "material": "",
+    "location": "E4.3.2",
+    "note": "신규",
+    "producer": "오정옥"
+  },
+  {
+    "id": "135",
+    "name": "14512612",
+    "classNo": "14512612",
+    "material": "",
+    "location": "F1.UP.3",
+    "note": "신규",
+    "producer": ""
+  },
+  {
+    "id": "1055",
+    "name": "1068-02671",
+    "classNo": "1068-02671",
+    "material": "",
+    "location": "EF.UP.4",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-278",
+    "name": "55211668",
+    "classNo": "55211668",
+    "material": "",
+    "location": "D1.4.1",
+    "note": "신규",
+    "producer": ""
+  },
+  {
+    "id": "13-279",
+    "name": "55211669",
+    "classNo": "55211669",
+    "material": "",
+    "location": "B1.2.2",
+    "note": "신규",
+    "producer": ""
+  },
+  {
+    "id": "13-286",
+    "name": "53227242",
+    "classNo": "53227242",
+    "material": "",
+    "location": "C7.2.1",
+    "note": "신규",
+    "producer": "황인전"
+  },
+  {
+    "id": "13-275",
+    "name": "54422356",
+    "classNo": "54422356",
+    "material": "",
+    "location": "E2.3.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-237",
+    "name": "14802561",
+    "classNo": "14802561",
+    "material": "",
+    "location": "E4.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-236",
+    "name": "53502270",
+    "classNo": "53502270",
+    "material": "",
+    "location": "B5.2.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-235",
+    "name": "54131254",
+    "classNo": "54131254",
+    "material": "",
+    "location": "B8.2.1",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "13-274",
+    "name": "54422341",
+    "classNo": "54422341",
+    "material": "",
+    "location": "B8.3.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-240",
+    "name": "53638870",
+    "classNo": "53638870",
+    "material": "",
+    "location": "D5.4.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-287",
+    "name": "14514081",
+    "classNo": "14514081",
+    "material": "",
+    "location": "F1.4.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-247",
+    "name": "54670780",
+    "classNo": "54670780",
+    "material": "",
+    "location": "C5.1.2",
+    "note": "",
+    "producer": "안호원"
+  },
+  {
+    "id": "13-294",
+    "name": "53730711",
+    "classNo": "53730711",
+    "material": "",
+    "location": "D6.UP.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-289",
+    "name": "53836512",
+    "classNo": "53836512",
+    "material": "",
+    "location": "E7.3.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-269",
+    "name": "54732286",
+    "classNo": "54732286",
+    "material": "",
+    "location": "E7.2.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-239",
+    "name": "53552724",
+    "classNo": "53552724",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-94",
+    "name": "961962",
+    "classNo": "961962",
+    "material": "",
+    "location": "B1.UP.4",
+    "note": "레오니",
+    "producer": ""
+  },
+  {
+    "id": "13-268",
+    "name": "54841088",
+    "classNo": "54841088",
+    "material": "",
+    "location": "C3.UP.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-246",
+    "name": "54062295",
+    "classNo": "54062295",
+    "material": "",
+    "location": "C2.UP.1",
+    "note": "구보",
+    "producer": "오정옥"
+  },
+  {
+    "id": "T-50",
+    "name": "14522223",
+    "classNo": "14522223",
+    "material": "",
+    "location": "D4.UP.3",
+    "note": "금형번호 확인 T 150",
+    "producer": ""
+  },
+  {
+    "id": "13-250",
+    "name": "54422771",
+    "classNo": "54422771",
+    "material": "",
+    "location": "D7.UP.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-238",
+    "name": "53522271",
+    "classNo": "53522271",
+    "material": "",
+    "location": "D7.UP.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-226",
+    "name": "14803590",
+    "classNo": "14803590",
+    "material": "",
+    "location": "D8.3.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-282",
+    "name": "14803859",
+    "classNo": "14803859",
+    "material": "",
+    "location": "D5.4.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-241",
+    "name": "53462387",
+    "classNo": "53462387",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-242",
+    "name": "53462385",
+    "classNo": "53462385",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "265",
+    "name": "1155-01011",
+    "classNo": "1155-01011",
+    "material": "",
+    "location": "A1.7상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-272",
+    "name": "2013-272",
+    "classNo": "2013-272",
+    "material": "",
+    "location": "B3.UP.3",
+    "note": "PEDAL 청사정공",
+    "producer": "안호원"
+  },
+  {
+    "id": "13-271",
+    "name": "CAP 청사정공",
+    "classNo": "CAP 청사정공",
+    "material": "",
+    "location": "B4.UP.2",
+    "note": "PEDAL 청사정공",
+    "producer": "김홍현"
+  },
+  {
+    "id": "13-245",
+    "name": "54202297",
+    "classNo": "54202297",
+    "material": "",
+    "location": "C3.UP.3",
+    "note": "구보",
+    "producer": "오정옥, 황인전"
+  },
+  {
+    "id": "235",
+    "name": "-",
+    "classNo": "",
+    "material": "",
+    "location": "E3.UP.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "189",
+    "name": ".7/16",
+    "classNo": ".7/16",
+    "material": "",
+    "location": "D3.UP.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "161",
+    "name": "2024-00360",
+    "classNo": "2024-00360",
+    "material": "",
+    "location": "E1.7상",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-297",
+    "name": "53931009",
+    "classNo": "53931009",
+    "material": "",
+    "location": "E3.5.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-300",
+    "name": "54037779",
+    "classNo": "54037779",
+    "material": "",
+    "location": "D5.UP.3",
+    "note": "13-230에서 13-300변경",
+    "producer": ""
+  },
+  {
+    "id": "13-301",
+    "name": "54068953",
+    "classNo": "54068953",
+    "material": "",
+    "location": "B.10",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-302",
+    "name": "961955",
+    "classNo": "961955",
+    "material": "",
+    "location": "D5.UP.3",
+    "note": "13-232에서 13-302변경",
+    "producer": ""
+  },
+  {
+    "id": "13-303",
+    "name": "54068931-A",
+    "classNo": "54068931-A",
+    "material": "",
+    "location": "B.10",
+    "note": "명진기업",
+    "producer": ""
+  },
+  {
+    "id": "셀.노랑",
+    "name": "14794934",
+    "classNo": "14794934",
+    "material": "",
+    "location": "J(노랑)",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-304",
+    "name": "54716126",
+    "classNo": "54716126",
+    "material": "",
+    "location": "E7.4.4",
+    "note": "250313 신규",
+    "producer": ""
+  },
+  {
+    "id": "13-138",
+    "name": "14731962",
+    "classNo": "14731962",
+    "material": "",
+    "location": "D1.3.3",
+    "note": "한일정공",
+    "producer": ""
+  },
+  {
+    "id": "13-136",
+    "name": "14731955",
+    "classNo": "14731955",
+    "material": "",
+    "location": "D1.3.2",
+    "note": "한일정공",
+    "producer": ""
+  },
+  {
+    "id": "13-137",
+    "name": "14731960",
+    "classNo": "14731960",
+    "material": "",
+    "location": "D1.3.1",
+    "note": "한일정공",
+    "producer": ""
+  },
+  {
+    "id": "13-295",
+    "name": "53972502",
+    "classNo": "53972502",
+    "material": "",
+    "location": "E2.4.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-309",
+    "name": "54619597",
+    "classNo": "54619597",
+    "material": "",
+    "location": "D5.UP.3",
+    "note": "25년3월 신규",
+    "producer": ""
+  },
+  {
+    "id": "13-310",
+    "name": "11024753",
+    "classNo": "11024753",
+    "material": "",
+    "location": "D5.UP.3",
+    "note": "25년3월 신규",
+    "producer": ""
+  },
+  {
+    "id": "13-227",
+    "name": "14803675",
+    "classNo": "14803675",
+    "material": "",
+    "location": "2층 창고",
+    "note": "25년 3월 이동",
+    "producer": ""
+  },
+  {
+    "id": "13-312",
+    "name": "54792475",
+    "classNo": "54792475",
+    "material": "",
+    "location": "F7.3.2",
+    "note": "25년4월8일 신규금형",
+    "producer": ""
+  },
+  {
+    "id": "모름",
+    "name": "동일농잠구",
+    "classNo": "동일농잠구",
+    "material": "",
+    "location": "2층창고",
+    "note": "25년 4월이동",
+    "producer": ""
+  },
+  {
+    "id": "860",
+    "name": "14529332",
+    "classNo": "14529332",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "858",
+    "name": "14530967",
+    "classNo": "14530967",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-273",
+    "name": "54322691",
+    "classNo": "54322691",
+    "material": "",
+    "location": "F1.UP.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "120",
+    "name": "14510427",
+    "classNo": "14510427",
+    "material": "",
+    "location": "E6.UP.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "121",
+    "name": "14510429",
+    "classNo": "14510429",
+    "material": "",
+    "location": "E6.UP.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "A-2",
+    "name": "A-2",
+    "classNo": "A-2",
+    "material": "",
+    "location": "E7.UP.3",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-255",
+    "name": "14794333",
+    "classNo": "14794333",
+    "material": "",
+    "location": "F8.UP.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "M10",
+    "name": "20231023",
+    "classNo": "20231023",
+    "material": "",
+    "location": "F10.UP.2",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-230",
+    "name": "-",
+    "classNo": "",
+    "material": "",
+    "location": "D5.UP.3",
+    "note": "25년3월 신규",
+    "producer": "황인전"
+  },
+  {
+    "id": "13-232",
+    "name": "-",
+    "classNo": "",
+    "material": "",
+    "location": "D5.UP.3",
+    "note": "25년3월 신규",
+    "producer": ""
+  },
+  {
+    "id": "13-251",
+    "name": "89.4*60",
+    "classNo": "89.4*60",
+    "material": "",
+    "location": "E1.5.4",
+    "note": "TLATE 고무",
+    "producer": ""
+  },
+  {
+    "id": "12-1",
+    "name": "2005030",
+    "classNo": "2005030",
+    "material": "",
+    "location": "포장실",
+    "note": "영일케미칼",
+    "producer": "안호원"
+  },
+  {
+    "id": "34",
+    "name": "9373-21040",
+    "classNo": "9373-21040",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "54",
+    "name": "KMX-R",
+    "classNo": "KMX-R",
+    "material": "",
+    "location": "2층창고",
+    "note": "고무+철판",
+    "producer": ""
+  },
+  {
+    "id": "43",
+    "name": "PP-2",
+    "classNo": "PP-2",
+    "material": "",
+    "location": "2층창고",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "249",
+    "name": "1123-02490",
+    "classNo": "1123-02490",
+    "material": "",
+    "location": "B-8벽",
+    "note": "오성",
+    "producer": "우대웅"
+  },
+  {
+    "id": "25.6Φ 1.2T × 24",
+    "name": "945301",
+    "classNo": "945301",
+    "material": "",
+    "location": "Y5.2.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "13-314",
+    "name": "10040500",
+    "classNo": "10040500",
+    "material": "",
+    "location": "",
+    "note": "대창단조",
+    "producer": ""
+  },
+  {
+    "id": "16",
+    "name": "S45-10810",
+    "classNo": "S45-10810",
+    "material": "",
+    "location": "포장실",
+    "note": "플레이트",
+    "producer": "황인전"
+  },
+  {
+    "id": "T-20",
+    "name": "-",
+    "classNo": "",
+    "material": "",
+    "location": "F7.UP.1",
+    "note": "",
+    "producer": ""
+  },
+  {
+    "id": "390",
+    "name": "14797027",
+    "classNo": "14797027",
+    "material": "",
+    "location": "A4바닥",
+    "note": "파워블록",
+    "producer": ""
+  },
+  {
+    "id": "13-311",
+    "name": "23.6*10*10",
+    "classNo": "23.6*10*10",
+    "material": "",
+    "location": "D3.3.3",
+    "note": "삼도유압",
+    "producer": ""
+  },
+  {
+    "id": "13-313",
+    "name": "20*12*10",
+    "classNo": "20*12*10",
+    "material": "",
+    "location": "D3.3.3",
+    "note": "삼도유압",
+    "producer": ""
+  },
+  {
+    "id": "13-308",
+    "name": "-",
+    "classNo": "",
+    "material": "",
+    "location": "D3.3.3",
+    "note": "삼도유압",
+    "producer": ""
+  },
+  {
+    "id": "2013-315",
+    "name": "55347889",
+    "classNo": "55347889",
+    "material": "",
+    "location": "F10.3.1",
+    "note": "25년 8월 신규",
+    "producer": ""
+  },
+  {
+    "id": "2013-317",
+    "name": "55765404",
+    "classNo": "55765404",
+    "material": "",
+    "location": "F.8.4.2",
+    "note": "25년11월",
+    "producer": ""
+  },
+  {
+    "id": "13-319",
+    "name": "55782862",
+    "classNo": "55782862",
+    "material": "",
+    "location": "F.92.2",
+    "note": "",
+    "producer": "오정옥"
+  },
+  {
+    "id": "13-320",
+    "name": "18.3*12.3*10",
+    "classNo": "18.3*12.3*10",
+    "material": "",
+    "location": "D.3.3.3",
+    "note": "삼도유압",
+    "producer": ""
+  },
+  {
+    "id": "13-321",
+    "name": "56271379",
+    "classNo": "56271379",
+    "material": "",
+    "location": "",
+    "note": "26.1",
+    "producer": ""
+  },
+  {
+    "id": "13-217",
+    "name": "C90A410*50*45*20",
+    "classNo": "C90A410*50*45*20",
+    "material": "",
+    "location": "2층.뒤",
+    "note": "유압.신파렛트",
+    "producer": ""
+  },
+  {
+    "id": "13-318",
+    "name": "56121941",
+    "classNo": "56121941",
+    "material": "",
+    "location": "B.6.2.2",
+    "note": "26.1",
+    "producer": "안호원, 이창호"
+  }
+];
+
+document.getElementById('total-cnt').textContent = DATA.length;
+
+let timer = null;
+
+function onSearch(val) {
+  document.getElementById('clear-btn').classList.toggle('show', val.length > 0);
+  clearTimeout(timer);
+  timer = setTimeout(() => renderResults(val.trim()), 80);
+}
+
+function clearSearch() {
+  const inp = document.getElementById('search');
+  inp.value = '';
+  inp.focus();
+  document.getElementById('clear-btn').classList.remove('show');
+  renderResults('');
+}
+
+function renderResults(q) {
+  const box = document.getElementById('results');
+  if (!q) {
+    box.innerHTML = `<div class="empty">
+      <div class="empty-icon">📍</div>
+      <div class="empty-sub">금형번호 (예: 75, 591)<br>또는 부품번호를 입력하세요</div>
+    </div>`;
+    return;
+  }
+  const qu = q.toUpperCase();
+  const list = DATA.filter(d =>
+    d.id.toUpperCase().includes(qu) ||
+    d.name.toUpperCase().includes(qu) ||
+    (d.classNo || '').includes(q)
+  ).sort((a, b) => {
+    const aId = a.id.toUpperCase().includes(qu);
+    const bId = b.id.toUpperCase().includes(qu);
+    if (aId && !bId) return -1;
+    if (!aId && bId) return 1;
+    return 0;
+  });
+  if (!list.length) {
+    box.innerHTML = `<div class="empty">
+      <div class="empty-icon">🔍</div>
+      <div class="empty-title">검색 결과 없음</div>
+      <div class="empty-sub">"${q}"에 해당하는<br>품목을 찾을 수 없습니다</div>
+    </div>`;
+    return;
+  }
+  // 전역 변수에 현재 검색 결과 저장 (PDF용)
+  window._lastSearchList = list;
+  window._lastSearchQ = q;
+
+  box.innerHTML =
+    `<div class="result-meta">검색 결과 <strong>${list.length}건</strong></div>` +
+    list.map((d, i) => `
+    <div class="card" onclick="openModal('${d.id}')" style="animation-delay:${i * 25}ms">
+      <div class="card-location">
+        <div class="loc-icon">📍</div>
+        <div class="loc-main">
+          ${d.location
+            ? `<div class="loc-text">${d.location}</div>`
+            : `<div class="loc-empty">위치 미등록</div>`}
+          <div class="loc-mold">| ${d.id}</div>
+          ${d.producer ? `<div class="loc-mold">|</div><div class="loc-producer"><span class="prod-label">생산자</span>${d.producer}</div>` : ''}
+        </div>
+      </div>
+      <div class="card-info">
+        <div class="chip-row" style="margin-bottom:6px">
+          <div class="chip c-blue"><span class="lbl">금형</span><span class="val">${d.id}</span></div>
+          <div class="chip"><span class="lbl">부품번호</span><span class="val">${d.classNo || '-'}</span></div>
+          ${d.material ? `<div class="chip c-amber"><span class="lbl">재질</span><span class="val">${d.material}</span></div>` : ''}
+
+          ${d.note ? `<div class="chip"><span class="lbl">비고</span><span class="val" style="font-size:12px;font-family:'Noto Sans KR',sans-serif">${d.note}</span></div>` : ''}
+        </div>
+        <div class="card-name">${d.name}</div>
+      </div>
+    </div>`).join('');
+}
+
+function openModal(id) {
+  const d = DATA.find(x => x.id === id);
+  if (!d) return;
+
+  const isAdmin = editMode;
+
+  /* ── 생산자 칩 HTML ── */
+  const chips = PRODUCER_LIST.map(p =>
+    `<div class="producer-chip${d.producer===p?' active':''}" onclick="selectProducerChip(this,'${p.replace(/'/g,"&#39;")}')">${p}</div>`
+  ).join('');
+
+  document.getElementById('mo-body').innerHTML = `
+
+    <!-- 위치 표시 + 편집 -->
+    <div class="big-loc" id="mo-loc-display" style="cursor:${isAdmin?'pointer':'default'}" ${isAdmin?`onclick="moToggleSection('loc')" title="탭하여 수정"`:''}">
+      <div class="big-loc-label">📍 제품 위치 ${isAdmin?'<span style="font-size:10px;opacity:.5;margin-left:4px">탭하여 수정</span>':''}</div>
+      ${d.location ? `<div class="big-loc-val" id="mo-loc-val">${d.location}</div>`
+                   : `<div class="big-loc-empty" id="mo-loc-val">위치 미등록</div>`}
+    </div>
+    <div class="mo-edit-section" id="mo-loc-section" style="display:none;margin-bottom:14px">
+      <input class="edit-loc-input" id="edit-loc-input" type="text" value="${d.location||''}" placeholder="위치 입력 (예: D2.2.1)">
+      <div style="display:flex;gap:8px">
+        <button class="save-loc-btn" style="flex:1" onclick="saveLocation('${d.id}')">✓ 저장</button>
+        <button class="save-loc-btn" style="flex:0 0 auto;background:rgba(255,255,255,.08);color:var(--text2)" onclick="moToggleSection('loc')">취소</button>
+      </div>
+    </div>
+
+    <!-- 기본 정보 -->
+    <div style="margin-bottom:12px">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:5px;font-weight:600">📋 기본 정보</div>
+      <div class="mo-rows">
+        <div class="mo-row"><span class="k">금형번호</span><span class="v blue">${d.id}</span></div>
+        <div class="mo-row"><span class="k">부품번호</span><span class="v">${d.classNo||'-'}</span></div>
+        <div class="mo-row"><span class="k">재질</span><span class="v">${d.material||'-'}</span></div>
+        <div class="mo-row"><span class="k">품명</span><span class="v" style="font-family:'Noto Sans KR',sans-serif;font-size:13px">${d.name||'-'}</span></div>
+      </div>
+    </div>
+
+    <!-- 생산자 표시 + 편집 -->
+    <div class="mo-edit-row" id="mo-prod-display" style="cursor:${isAdmin?'pointer':'default'}" ${isAdmin?`onclick="moToggleSection('prod')" title="탭하여 수정"`:''}>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:rgba(255,184,0,.06);border:1px solid rgba(255,184,0,${d.producer?'.25':'.1'});border-radius:10px">
+        <div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:3px">🏭 생산자</div>
+          <div id="mo-prod-val" style="font-size:16px;font-weight:700;color:${d.producer?'#ffb800':'var(--text2)'}">${d.producer||'미등록'}</div>
+        </div>
+        ${isAdmin?`<div style="display:flex;gap:8px;align-items:center">
+          ${d.producer?`<button onclick="event.stopPropagation();deleteProducer('${d.id}')" style="background:rgba(255,68,100,.15);border:1px solid rgba(255,68,100,.4);color:#ff7088;border-radius:8px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif" id="mo-prod-del-btn">삭제</button>`:'<span id="mo-prod-del-btn"></span>'}
+          <div style="font-size:11px;color:rgba(255,184,0,.5);font-weight:600">수정 ›</div>
+        </div>`:''}
+      </div>
+    </div>
+    <div class="mo-edit-section" id="mo-prod-section" style="display:none;margin-top:8px;margin-bottom:14px">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:7px;font-weight:600;letter-spacing:.04em">생산자 선택 또는 직접 입력</div>
+      <div class="producer-chips" id="producer-chips">${chips}</div>
+      <input class="edit-producer-input" id="edit-producer-input" type="text" value="${d.producer||''}" placeholder="이름 직접 입력">
+      <div style="display:flex;gap:8px">
+        <button class="save-producer-btn" style="flex:1" onclick="saveProducer('${d.id}')">✓ 저장</button>
+        <button class="save-producer-btn" style="flex:0 0 auto;background:rgba(255,255,255,.08);color:var(--text2);border:1px solid rgba(255,255,255,.1)" onclick="moToggleSection('prod')">취소</button>
+      </div>
+    </div>
+
+    <!-- 비고 -->
+    ${d.note ? `
+    <div style="padding:10px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;margin-top:4px">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:4px">📝 비고</div>
+      <div style="font-size:13px;color:var(--text);font-family:'Noto Sans KR',sans-serif;line-height:1.5">${d.note}</div>
+    </div>` : ''}
+  `;
+
+  document.getElementById('ov').classList.add('on');
+}
+
+/* 모달 내 편집 섹션 토글 */
+function moToggleSection(type) {
+  const sec = document.getElementById('mo-'+type+'-section');
+  const isOpen = sec.style.display !== 'none';
+  // 모두 닫기
+  ['loc','prod'].forEach(t => {
+    const s = document.getElementById('mo-'+t+'-section');
+    if (s) s.style.display = 'none';
+  });
+  if (!isOpen) {
+    sec.style.display = 'block';
+    // 입력창 포커스
+    const inp = sec.querySelector('input');
+    if (inp) setTimeout(() => inp.focus(), 80);
+  }
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('ov'))
+    document.getElementById('ov').classList.remove('on');
+}
+
+let editMode = false;
+
+function toggleEditMode() {
+  if (!editMode) {
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-err').textContent = '';
+    document.getElementById('pw-sub').textContent = '관리자 로그인이 필요합니다';
+    document.getElementById('pw-ov').classList.add('on');
+    setTimeout(() => document.getElementById('pw-input').focus(), 200);
+  } else {
+    editMode = false;
+    const btn = document.getElementById('admin-btn');
+    btn.className = 'admin-btn login';
+    btn.innerHTML = '<div class="admin-dot"></div>관리자 로그인';
+    document.getElementById('save-fab').classList.add('disabled');
+    document.getElementById('prod-fab').style.display = 'none';
+    showToast('🔒 로그아웃 되었습니다');
+  }
+}
+
+function pwCheck() {
+  const v = document.getElementById('pw-input').value;
+  if (v.length === 4) confirmPw();
+}
+
+function confirmPw() {
+  const v = document.getElementById('pw-input').value;
+  if (v === '6716') {
+    editMode = true;
+    closePw();
+    const btn = document.getElementById('admin-btn');
+    btn.className = 'admin-btn logout';
+    btn.innerHTML = '<div class="admin-dot"></div>관리자 로그아웃';
+    document.getElementById('save-fab').classList.remove('disabled');
+    document.getElementById('prod-fab').style.display = 'flex';
+    showToast('✅ 관리자 로그인 완료');
+  } else {
+    document.getElementById('pw-err').textContent = '비밀번호가 틀렸습니다';
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+  }
+}
+
+function closePw() {
+  document.getElementById('pw-ov').classList.remove('on');
+}
+
+function saveLocation(id) {
+  const newLoc = document.getElementById('edit-loc-input').value.trim();
+  if (!newLoc) { showToast('위치를 입력해주세요'); return; }
+  const idx = DATA.findIndex(d => d.id === id);
+  if (idx < 0) return;
+  const oldLoc = DATA[idx].location || '미등록';
+  if (oldLoc === newLoc) { showToast('동일한 위치입니다'); return; }
+  DATA[idx].location = newLoc;
+  localStorage.setItem('sr-loc-overrides', JSON.stringify(
+    DATA.reduce((acc, d) => { acc[d.id] = d.location; return acc; }, {})
+  ));
+  addChgLog(id, DATA[idx].name, oldLoc, newLoc);
+  showToast('📍 위치 저장: ' + oldLoc + ' → ' + newLoc);
+  // 모달 내 위치 값 즉시 갱신
+  const valEl = document.getElementById('mo-loc-val');
+  if (valEl) { valEl.textContent = newLoc; valEl.className = 'big-loc-val'; }
+  moToggleSection('loc'); // 편집창 닫기
+  // 검색 결과 갱신
+  const q = document.getElementById('search').value;
+  if (q) renderResults(q.trim());
+}
+
+/* ── 생산자 목록 ── */
+const PRODUCER_LIST = ["김홍현", "송형목", "안호원", "오정옥", "우대웅", "이창호", "황인전"];
+
+// localStorage 생산자 오버라이드 로드 (기존 값은 note로 병합 후 초기화)
+(function loadProducerOverrides() {
+  try {
+    const ov = JSON.parse(localStorage.getItem('sr-producer-overrides') || '{}');
+    DATA.forEach(d => {
+      const saved = ov[d.id];
+      if (saved !== undefined) {
+        // localStorage에 명시적으로 저장된 값이 있으면 그걸 우선 적용 (빈값 포함)
+        d.producer = saved;
+      }
+      // localStorage에 없으면 DATA에 원래 있던 producer 값 그대로 유지
+    });
+  } catch(e) {}
+})();
+
+function selectProducerChip(el, name) {
+  document.querySelectorAll('#producer-chips .producer-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('edit-producer-input').value = name;
+}
+
+function deleteProducer(id) {
+  const idx = DATA.findIndex(d => d.id === id);
+  if (idx < 0) return;
+  const oldProd = DATA[idx].producer;
+  if (!oldProd) { showToast('등록된 생산자가 없습니다'); return; }
+  DATA[idx].producer = '';
+  const ov = (() => { try { return JSON.parse(localStorage.getItem('sr-producer-overrides') || '{}'); } catch(e) { return {}; } })();
+  ov[id] = '';
+  localStorage.setItem('sr-producer-overrides', JSON.stringify(ov));
+  addChgLog(id, DATA[idx].name, '생산자:' + oldProd, '생산자:미등록');
+  showToast('🗑️ 생산자 삭제: ' + oldProd);
+  // 모달 내 즉시 갱신
+  const valEl = document.getElementById('mo-prod-val');
+  if (valEl) { valEl.textContent = '미등록'; valEl.style.color = 'var(--text2)'; }
+  const delBtn = document.getElementById('mo-prod-del-btn');
+  if (delBtn) delBtn.style.display = 'none';
+  // 입력창도 초기화
+  const inp = document.getElementById('edit-producer-input');
+  if (inp) inp.value = '';
+  document.querySelectorAll('#producer-chips .producer-chip').forEach(c => c.classList.remove('active'));
+  const q = document.getElementById('search').value;
+  if (q) renderResults(q.trim());
+}
+
+function saveProducer(id) {
+  const newProd = document.getElementById('edit-producer-input').value.trim();
+  const idx = DATA.findIndex(d => d.id === id);
+  if (idx < 0) return;
+  const oldProd = DATA[idx].producer || '';
+  if (oldProd === newProd) { showToast('동일한 생산자입니다'); return; }
+  DATA[idx].producer = newProd;
+  const ov = (() => { try { return JSON.parse(localStorage.getItem('sr-producer-overrides') || '{}'); } catch(e) { return {}; } })();
+  ov[id] = newProd;
+  localStorage.setItem('sr-producer-overrides', JSON.stringify(ov));
+  addChgLog(id, DATA[idx].name, '생산자:' + (oldProd||'미등록'), '생산자:' + (newProd||'미등록'));
+  showToast('🏭 생산자 저장: ' + (newProd || '(없음)'));
+  // 모달 내 생산자 표시 즉시 갱신
+  const valEl = document.getElementById('mo-prod-val');
+  if (valEl) { valEl.textContent = newProd || '미등록'; valEl.style.color = newProd ? '#ffb800' : 'var(--text2)'; }
+  const delBtn = document.getElementById('mo-prod-del-btn');
+  if (delBtn) {
+    if (newProd) {
+      delBtn.outerHTML = `<button onclick="event.stopPropagation();deleteProducer('${id}')" style="background:rgba(255,68,100,.15);border:1px solid rgba(255,68,100,.4);color:#ff7088;border-radius:8px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif" id="mo-prod-del-btn">삭제</button>`;
+    } else {
+      delBtn.style.display = 'none';
+    }
+  }
+  moToggleSection('prod');
+  const q = document.getElementById('search').value;
+  if (q) renderResults(q.trim());
+}
+
+/* ── 생산자 목록 관리 패널 ── */
+function openProdPanel() {
+  if (!editMode) { showToast('🔒 관리자 로그인 후 사용 가능합니다'); return; }
+  renderProdList();
+  document.getElementById('prod-ov').classList.add('on');
+}
+function closeProdPanel() {
+  document.getElementById('prod-ov').classList.remove('on');
+  document.getElementById('new-producer-input').value = '';
+}
+
+function renderProdList() {
+  const box = document.getElementById('prod-list');
+  box.innerHTML = PRODUCER_LIST.map((p, i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:12px 14px;margin-bottom:8px">
+      <span style="font-size:14px;font-weight:700;color:var(--text)">${p}</span>
+      <button onclick="removeProducerFromList(${i})" style="background:rgba(255,68,100,.12);border:1px solid rgba(255,68,100,.3);color:#ff7088;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif">삭제</button>
+    </div>`).join('') || '<div class="chg-empty">등록된 생산자가 없습니다</div>';
+}
+
+function addProducerToList() {
+  const inp = document.getElementById('new-producer-input');
+  const name = inp.value.trim();
+  if (!name) { showToast('이름을 입력해주세요'); return; }
+  if (PRODUCER_LIST.includes(name)) { showToast('이미 있는 생산자입니다'); inp.value=''; return; }
+  PRODUCER_LIST.push(name);
+  inp.value = '';
+  renderProdList();
+  showToast('✅ 생산자 추가: ' + name);
+}
+
+function removeProducerFromList(idx) {
+  const name = PRODUCER_LIST[idx];
+  PRODUCER_LIST.splice(idx, 1);
+  renderProdList();
+  showToast('🗑️ 삭제: ' + name);
+}
+
+function fmtDate(ts) {
+  const d = new Date(ts);
+  const yy = d.getFullYear();
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mi = String(d.getMinutes()).padStart(2,'0');
+  return `${yy}.${mm}.${dd} ${hh}:${mi}`;
+}
+
+function loadChgLogs() {
+  try { return JSON.parse(localStorage.getItem('sr-chg-log') || '[]'); } catch(e) { return []; }
+}
+function saveChgLogs(logs) {
+  localStorage.setItem('sr-chg-log', JSON.stringify(logs));
+}
+
+function addChgLog(id, name, from, to) {
+  const logs = loadChgLogs();
+  logs.unshift({ id, name, from, to, ts: Date.now() });
+  saveChgLogs(logs);
+  updateBadge(logs.length);
+}
+
+function updateBadge(n) {
+  const b = document.getElementById('chg-badge');
+  if (n > 0) { b.textContent = n > 99 ? '99+' : n; b.classList.add('show'); }
+  else { b.classList.remove('show'); }
+}
+
+let selectMode = false;
+
+function openChgPanel() {
+  selectMode = false;
+  renderChgList();
+  document.getElementById('chg-ov').classList.add('on');
+}
+function closeChgPanel() {
+  exitSelectMode();
+  document.getElementById('chg-ov').classList.remove('on');
+}
+
+function enterSelectMode() {
+  selectMode = true;
+  document.getElementById('chg-header').classList.add('hidden');
+  document.getElementById('chg-sel-header').classList.add('on');
+  document.getElementById('chg-selall-bar').classList.add('on');
+  document.getElementById('chg-selall-cb').checked = false;
+  updateSelInfo();
+  // 체크박스 보이기
+  document.querySelectorAll('.chg-item-cb').forEach(cb => cb.classList.add('on'));
+  document.querySelectorAll('.chg-item').forEach(item => {
+    item.style.paddingLeft = '46px';
+    item.querySelector('.chg-item-cb').checked = false;
+  });
+}
+
+function exitSelectMode() {
+  selectMode = false;
+  document.getElementById('chg-header').classList.remove('hidden');
+  document.getElementById('chg-sel-header').classList.remove('on');
+  document.getElementById('chg-selall-bar').classList.remove('on');
+  document.querySelectorAll('.chg-item-cb').forEach(cb => { cb.classList.remove('on'); cb.checked = false; });
+  document.querySelectorAll('.chg-item').forEach(item => { item.classList.remove('selected'); item.style.paddingLeft = '14px'; });
+}
+
+function toggleSelectAll(checked) {
+  document.querySelectorAll('.chg-item-cb').forEach(cb => { cb.checked = checked; });
+  document.querySelectorAll('.chg-item').forEach(item => {
+    if (checked) item.classList.add('selected'); else item.classList.remove('selected');
+  });
+  updateSelInfo();
+}
+
+function onItemCheck(cb, idx) {
+  const item = document.getElementById('chg-item-' + idx);
+  if (cb.checked) item.classList.add('selected'); else item.classList.remove('selected');
+  // 전체 선택 체크박스 동기화
+  const all = document.querySelectorAll('.chg-item-cb');
+  const checked = document.querySelectorAll('.chg-item-cb:checked');
+  document.getElementById('chg-selall-cb').checked = all.length === checked.length;
+  updateSelInfo();
+}
+
+function updateSelInfo() {
+  const n = document.querySelectorAll('.chg-item-cb:checked').length;
+  document.getElementById('chg-sel-info').textContent = n + '개 선택';
+  const btn = document.getElementById('chg-sel-delete');
+  btn.disabled = n === 0;
+}
+
+function deleteSelected() {
+  const checks = document.querySelectorAll('.chg-item-cb:checked');
+  if (!checks.length) return;
+  const indices = Array.from(checks).map(cb => parseInt(cb.dataset.idx)).sort((a,b) => b-a);
+  const logs = loadChgLogs();
+  indices.forEach(i => logs.splice(i, 1));
+  saveChgLogs(logs);
+  updateBadge(logs.length);
+  exitSelectMode();
+  renderChgList();
+  showToast('🗑️ ' + indices.length + '건 삭제 완료');
+}
+
+function renderChgList() {
+  const logs = loadChgLogs();
+  const box = document.getElementById('chg-list');
+  if (!logs.length) {
+    box.innerHTML = '<div class="chg-empty">📭 변경 이력이 없습니다</div>';
+    return;
+  }
+  box.innerHTML = logs.map((log, i) => `
+    <div class="chg-item" id="chg-item-${i}" style="padding-left:14px">
+      <input type="checkbox" class="chg-item-cb" data-idx="${i}" onchange="onItemCheck(this,${i})">
+      <div class="chg-item-top">
+        <div class="chg-item-id">금형 ${log.id}</div>
+        <div class="chg-item-date">🕐 ${fmtDate(log.ts)}</div>
+      </div>
+      <div class="chg-item-arrow">
+        <div class="chg-from">${log.from}</div>
+        <div class="chg-arr">→</div>
+        <div class="chg-to">${log.to}</div>
+      </div>
+      <div class="chg-item-name">${log.name || ''}</div>
+    </div>`).join('');
+  // 선택 모드 중이었으면 다시 적용
+  if (selectMode) {
+    document.querySelectorAll('.chg-item-cb').forEach(cb => cb.classList.add('on'));
+    document.querySelectorAll('.chg-item').forEach(item => item.style.paddingLeft = '46px');
+  }
+}
+
+function clearAllChg() {
+  const logs = loadChgLogs();
+  if (!logs.length) { showToast('삭제할 이력이 없습니다'); return; }
+  if (!confirm('변경 이력을 모두 삭제할까요?')) return;
+  saveChgLogs([]);
+  updateBadge(0);
+  exitSelectMode();
+  renderChgList();
+}
+
+// 초기 배지 업데이트
+(function initBadge() {
+  updateBadge(loadChgLogs().length);
+})();
+
+// localStorage에서 위치 오버라이드 불러오기
+(function loadOverrides() {
+  try {
+    const ov = JSON.parse(localStorage.getItem('sr-loc-overrides') || '{}');
+    Object.entries(ov).forEach(([id, loc]) => {
+      const d = DATA.find(x => x.id === id);
+      if (d) d.location = loc;
+    });
+  } catch(e) {}
+})();
+
+/* ── 검색 결과 PDF 저장 ── */
+function downloadSearchPDF() {
+  // 현재 검색창 값으로 직접 재검색
+  const q = (window._lastSearchQ || document.getElementById('search').value || '').trim();
+  if (!q) { showToast('검색어가 없습니다'); return; }
+
+  const qu = q.toUpperCase();
+  const list = DATA.filter(d =>
+    d.id.toUpperCase().includes(qu) ||
+    d.name.toUpperCase().includes(qu) ||
+    (d.classNo || '').includes(q)
+  );
+  if (!list.length) { showToast('검색 결과가 없습니다'); return; }
+
+  const now = new Date();
+  const yy = now.getFullYear();
+  const mm = String(now.getMonth()+1).padStart(2,'0');
+  const dd = String(now.getDate()).padStart(2,'0');
+  const dateStr = yy + '.' + mm + '.' + dd;
+  const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+
+  const rows = list.map((d, i) => `
+    <tr class="${i%2===0?'even':'odd'}">
+      <td class="loc">${d.location || '미등록'}</td>
+      <td>${d.id}</td>
+      <td>${d.classNo || '-'}</td>
+      <td>${d.name || '-'}</td>
+      <td>${d.material || '-'}</td>
+      <td>${d.producer || '-'}</td>
+    </tr>`).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>삼성SR 위치 데이터 ${yy}${mm}${dd}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:sans-serif;background:#fff;color:#111;padding:18px 14px;font-size:11px}
+  .cover{text-align:center;padding:20px 0 16px;border-bottom:3px solid #2563ff;margin-bottom:14px}
+  .cover h1{font-size:19px;font-weight:700;color:#2563ff;margin-bottom:5px}
+  .cover .keyword{display:inline-block;background:#f0f4ff;border:1px solid #c7d4ff;border-radius:20px;padding:3px 14px;font-size:13px;font-weight:700;color:#2563ff;margin-bottom:5px}
+  .cover .meta{font-size:10px;color:#999}
+  .summary{display:flex;gap:12px;justify-content:center;margin-bottom:14px}
+  .sum-box{background:#f0f4ff;border:1px solid #c7d4ff;border-radius:8px;padding:8px 18px;text-align:center}
+  .sum-box .n{font-size:18px;font-weight:700;color:#2563ff}
+  .sum-box .l{font-size:9px;color:#666;margin-top:2px}
+  table{width:100%;border-collapse:collapse}
+  thead tr{background:#2563ff;color:#fff}
+  thead th{padding:7px 5px;text-align:left;font-weight:700;font-size:10px}
+  tbody tr:nth-child(even){background:#f6f9ff}
+  td{padding:6px 5px;border-bottom:1px solid #e5eaf8;vertical-align:middle;font-size:11px}
+  td.loc{font-weight:700;color:#2563ff;font-size:13px;min-width:65px}
+  .footer{margin-top:14px;text-align:center;font-size:9px;color:#aaa;border-top:1px solid #eee;padding-top:8px}
+</style>
+</head>
+<body>
+  <div class="cover">
+    <h1>SAMSUNG S.R &nbsp;검색 결과</h1>
+    <div class="keyword">🔍 "${q}"</div><br>
+    <div class="meta">출력일시: ${dateStr} ${timeStr}</div>
+  </div>
+  <div class="summary">
+    <div class="sum-box"><div class="n">${list.length}</div><div class="l">검색 결과</div></div>
+    <div class="sum-box"><div class="n">${list.filter(d=>d.location).length}</div><div class="l">위치 등록</div></div>
+    <div class="sum-box"><div class="n">${list.filter(d=>!d.location).length}</div><div class="l">미등록</div></div>
+  </div>
+  <table>
+    <thead><tr><th>위치</th><th>금형번호</th><th>부품번호</th><th>품명</th><th>재질</th><th>비고</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="footer">SAMSUNG S.R &nbsp;|&nbsp; 검색어: "${q}" &nbsp;|&nbsp; ${dateStr}</div>
+</body>
+</html>`;
+
+  const blob = new Blob([html], {type:'text/html;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `삼성SR 위치 데이터 ${yy}${mm}${dd}.html`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=> URL.revokeObjectURL(url), 3000);
+  showToast('✅ 다운로드 완료!');
+}
+
+/* ── PDF 백업 (위치 A→Z 정렬) ── */
+function downloadPDF() {
+  if (!editMode) { showToast('🔒 관리자 로그인 후 사용 가능합니다'); return; }
+  showToast('📄 PDF 생성 중...');
+  setTimeout(() => {
+    const now = new Date();
+    const dateStr = now.getFullYear() + '.' +
+      String(now.getMonth()+1).padStart(2,'0') + '.' +
+      String(now.getDate()).padStart(2,'0');
+    const timeStr = String(now.getHours()).padStart(2,'0') + ':' +
+      String(now.getMinutes()).padStart(2,'0');
+
+    // 위치 기준 A→Z 정렬
+    const sorted = [...DATA].sort((a, b) => {
+      const la = (a.location || '').toUpperCase();
+      const lb = (b.location || '').toUpperCase();
+      return la < lb ? -1 : la > lb ? 1 : 0;
+    });
+
+    const rows = sorted.map((d, i) => `
+      <tr class="${i%2===0?'even':'odd'}">
+        <td class="loc">${d.location || '미등록'}</td>
+        <td>${d.id}</td>
+        <td>${d.classNo || '-'}</td>
+        <td>${d.name || '-'}</td>
+        <td>${d.material || '-'}</td>
+        <td style="color:#b36d00;font-weight:700">${d.producer || '-'}</td>
+        <td style="color:#555">${d.note || '-'}</td>
+      </tr>`).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>SAMSUNG SR 백업 ${dateStr}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Noto Sans KR',sans-serif;background:#fff;color:#111;padding:18px 14px;font-size:10.5px}
+  .cover{text-align:center;padding:22px 0 18px;border-bottom:3px solid #2563ff;margin-bottom:16px}
+  .cover h1{font-size:20px;font-weight:700;color:#2563ff;letter-spacing:.06em;margin-bottom:5px}
+  .cover .sub{font-size:12px;color:#555;margin-bottom:3px}
+  .cover .meta{font-size:10px;color:#999}
+  .summary{display:flex;gap:14px;justify-content:center;margin-bottom:18px}
+  .sum-box{background:#f0f4ff;border:1px solid #c7d4ff;border-radius:8px;padding:9px 22px;text-align:center}
+  .sum-box .n{font-size:20px;font-weight:700;color:#2563ff}
+  .sum-box .l{font-size:10px;color:#666;margin-top:2px}
+  table{width:100%;border-collapse:collapse}
+  thead tr{background:#2563ff;color:#fff}
+  thead th{padding:7px 5px;text-align:left;font-weight:700;font-size:10px;letter-spacing:.04em}
+  tbody tr.even{background:#f6f9ff}
+  tbody tr.odd{background:#fff}
+  td{padding:5px 5px;border-bottom:1px solid #e5eaf8;vertical-align:middle}
+  td.loc{font-weight:700;color:#2563ff;font-size:12px;min-width:70px}
+  .footer{margin-top:18px;text-align:center;font-size:9px;color:#aaa;border-top:1px solid #eee;padding-top:10px}
+  @media print{body{padding:10px 8px} .cover{padding:14px 0 12px}}
+</style>
+</head>
+<body>
+  <div class="cover">
+    <h1>SAMSUNG S.R</h1>
+    <div class="sub">제품 위치 데이터 백업</div>
+    <div class="meta">출력일시: ${dateStr} ${timeStr} &nbsp;|&nbsp; 위치 기준 A → Z 정렬</div>
+  </div>
+  <div class="summary">
+    <div class="sum-box"><div class="n">${DATA.length}</div><div class="l">전체 품목</div></div>
+    <div class="sum-box"><div class="n">${DATA.filter(d=>d.location).length}</div><div class="l">위치 등록</div></div>
+    <div class="sum-box"><div class="n">${DATA.filter(d=>!d.location).length}</div><div class="l">미등록</div></div>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>위치</th>
+        <th>금형번호</th>
+        <th>부품번호</th>
+        <th>품명</th>
+        <th>재질</th>
+        <th>비고</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="footer">SAMSUNG S.R 위치 검색 시스템 &nbsp;|&nbsp; ${dateStr} 기준</div>
+</body>
+</html>`;
+
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `삼성SR_위치데이터_${dateStr.replace(/\./g,'')}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('✅ 백업 파일 저장 완료 (브라우저에서 인쇄 → PDF 저장)');
+  }, 100);
+}
+
+
+/* ── 데이터 백업 (HTML 표) ── */
+function saveApp() {
+  if (!editMode) { showToast('🔒 관리자 로그인 후 사용 가능합니다'); return; }
+  try {
+    const now = new Date();
+    const yy = now.getFullYear();
+    const mm = String(now.getMonth()+1).padStart(2,'0');
+    const dd = String(now.getDate()).padStart(2,'0');
+    const dateStr = `${yy}.${mm}.${dd}`;
+
+    const sorted = [...DATA].sort((a,b) => (a.location||'').localeCompare(b.location||''));
+
+    const rows = sorted.map((d,i) =>
+      `<tr><td>${i+1}</td><td>${d.location||'미등록'}</td><td>${d.id}</td><td>${d.classNo||''}</td><td>${d.name||''}</td><td>${d.material||''}</td><td>${d.producer||''}</td></tr>`
+    ).join('');
+
+    const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
+<title>삼성SR 데이터 ${yy}${mm}${dd}</title>
+<style>
+body{font-family:sans-serif;font-size:12px;padding:12px;background:#fff;color:#111}
+h2{color:#2563ff;margin-bottom:4px;font-size:16px}
+p{color:#888;font-size:11px;margin-bottom:12px}
+table{width:100%;border-collapse:collapse}
+th{background:#2563ff;color:#fff;padding:7px 5px;text-align:left;font-size:11px;position:sticky;top:0}
+td{padding:6px 5px;border-bottom:1px solid #e5eaf8;font-size:11px}
+tr:nth-child(even){background:#f6f9ff}
+td:nth-child(2){font-weight:700;color:#2563ff;font-size:13px}
+</style></head><body>
+<h2>SAMSUNG S.R 위치 데이터</h2>
+<p>출력일: ${dateStr} &nbsp;|&nbsp; 총 ${DATA.length}종 &nbsp;|&nbsp; 위치순 정렬</p>
+<table>
+<thead><tr><th>No</th><th>위치</th><th>금형번호</th><th>부품번호</th><th>품명</th><th>재질</th><th>비고</th></tr></thead>
+<tbody>${rows}</tbody>
+</table>
+</body></html>`;
+
+    const b64 = btoa(unescape(encodeURIComponent(html)));
+    const a = document.createElement('a');
+    a.href = 'data:text/html;charset=utf-8;base64,' + b64;
+    a.download = `삼성SR_데이터_${yy}${mm}${dd}.html`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => document.body.removeChild(a), 500);
+    showToast('✅ 백업 완료!');
+  } catch(e) {
+    showToast('❌ 오류: ' + e.message);
+  }
+}
+
+function showToast(msg) {
+  let t = document.getElementById('sr-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'sr-toast';
+    t.style.cssText = 'position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:var(--navy2);border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:24px;font-size:13px;font-weight:600;z-index:400;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.4)';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.style.opacity = '0', 2000);
+}
+
+/* ── 뒤로가기 버튼 처리 ── */
+const layerStack = [];
+
+function pushLayer(name) {
+  history.pushState({ layer: name }, '');
+  layerStack.push(name);
+}
+function popLayer() {
+  layerStack.pop();
+}
+
+const _origOpenModal = openModal;
+openModal = function(id) {
+  _origOpenModal(id);
+  pushLayer('modal');
+};
+
+const _origOpenChgPanel = openChgPanel;
+openChgPanel = function() {
+  _origOpenChgPanel();
+  pushLayer('chg');
+};
+
+// 관리자 버튼 클릭 → 비번창 열릴 때 스택 push (toggleEditMode 직접 수정 대신 버튼에서 처리)
+document.getElementById('admin-btn').addEventListener('click', function() {
+  if (!editMode) {
+    // 비번창이 곧 열릴 예정 → pushLayer
+    setTimeout(() => {
+      if (document.getElementById('pw-ov').classList.contains('on')) pushLayer('pw');
+    }, 50);
+  }
+}, true);
+
+window.addEventListener('popstate', function(e) {
+  const layer = layerStack[layerStack.length - 1];
+  if (!layer) return;
+  popLayer();
+  if (layer === 'modal') {
+    document.getElementById('ov').classList.remove('on');
+  } else if (layer === 'chg') {
+    if (selectMode) {
+      exitSelectMode();
+      history.pushState({ layer: 'chg' }, '');
+      layerStack.push('chg');
+    } else {
+      closeChgPanel();
+    }
+  } else if (layer === 'pw') {
+    document.getElementById('pw-ov').classList.remove('on');
+  }
+});
+
+/* ============================================================
+   ☁️ 클라우드 동기화 모듈 (JSONBin.io)
+   ─ 보기: 누구나 (자동으로 30초마다 받아옴)
+   ─ 편집: editMode일 때만, 저장 시 즉시 업로드
+   ─ localStorage는 오프라인 캐시로 계속 사용
+   ============================================================ */
+(function cloudSync() {
+  const JBIN_KEY = '$2a$10$zMCORtYVLiYsjYrNi5neVux2WgMJEimYnFWY01JMQBt0cYY4fcoua';
+  const JBIN_ID_KEY = 'sr-loc-jbin-id'; // localStorage에 bin ID 저장
+  const POLL_INTERVAL = 5000;
+  const PUSH_DEBOUNCE = 1500;
+
+  let binId = '6a194484ddf5aa59f7733980';
+  localStorage.setItem(JBIN_ID_KEY, binId);
+
+  // 재고관리 inv Bin ID - 재고관리와 위치 데이터 양방향 동기화
+  const INV_BIN_ID = '6a194785ddf5aa59f7734288';
+
+  // 재고관리 Bin에서 위치/생산자 최신 데이터 가져와서 반영
+  async function syncFromInvBin() {
+    try {
+      const r = await fetch('https://api.jsonbin.io/v3/b/' + INV_BIN_ID + '/latest', {
+        headers: { 'X-Master-Key': JBIN_KEY }
+      });
+      if (!r.ok) return;
+      const invData = (await r.json()).record;
+      if (!Array.isArray(invData)) return;
+      let changed = false;
+      invData.forEach(item => {
+        const d = DATA.find(x => x.id === item.id);
+        if (d) {
+          if (item.location && d.location !== item.location) { d.location = item.location; changed = true; }
+          if (item.producer !== undefined && d.producer !== item.producer) { d.producer = item.producer; changed = true; }
+        }
+      });
+      if (changed) {
+        const q = document.getElementById('search');
+        if (q && q.value && typeof renderResults === 'function') renderResults(q.value.trim());
+      }
+    } catch(e) {}
+  }
+  let lastRemoteUpdatedAt = 0;
+  let pushTimer = null;
+  let isPushing = false;
+  let isPulling = false;
+
+  // 상태 표시 뱃지 생성
+  const statusEl = document.createElement('div');
+  statusEl.id = 'sync-status';
+  statusEl.style.cssText = 'position:fixed;bottom:10px;left:10px;z-index:200;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:5px 11px;font-size:11px;color:rgba(255,255,255,.7);font-family:"Noto Sans KR",sans-serif;display:flex;align-items:center;gap:6px;transition:opacity .3s';
+  statusEl.innerHTML = '<span id="sync-dot" style="width:7px;height:7px;border-radius:50%;background:#888;display:inline-block"></span><span id="sync-text">연결 중...</span>';
+  document.body.appendChild(statusEl);
+
+  function setStatus(state, text) {
+    const dot = document.getElementById('sync-dot');
+    const txt = document.getElementById('sync-text');
+    if (!dot || !txt) return;
+    const colors = { ok:'#00d97e', syncing:'#00d4ff', offline:'#ff7088', idle:'#888' };
+    dot.style.background = colors[state] || colors.idle;
+    txt.textContent = text;
+  }
+
+  async function jbGet() {
+    if (!binId) return null;
+    try {
+      const r = await fetch('https://api.jsonbin.io/v3/b/' + binId + '/latest', {
+        headers: { 'X-Master-Key': JBIN_KEY }
+      });
+      if (!r.ok) return null;
+      const d = await r.json();
+      return d.record;
+    } catch(e) { return null; }
+  }
+
+  async function jbSet(data) {
+    if (!binId) return false;
+    try {
+      const r = await fetch('https://api.jsonbin.io/v3/b/' + binId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-Master-Key': JBIN_KEY },
+        body: JSON.stringify(data)
+      });
+      return r.ok;
+    } catch(e) { return false; }
+  }
+
+  async function jbCreate(data) {
+    try {
+      const r = await fetch('https://api.jsonbin.io/v3/b', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Master-Key': JBIN_KEY, 'X-Bin-Name': 'sr-location', 'X-Bin-Private': 'false' },
+        body: JSON.stringify(data)
+      });
+      const d = await r.json();
+      return d.metadata?.id || null;
+    } catch(e) { return null; }
+  }
+
+  // 클라우드에서 받아와서 로컬에 반영
+  async function pull(showToastMsg) {
+    if (isPulling) return;
+    isPulling = true;
+    setStatus('syncing', '동기화 중...');
+    try {
+      // binId 없으면 생성
+      if (!binId) {
+        const locOv  = JSON.parse(localStorage.getItem('sr-loc-overrides') || '{}');
+        const prodOv = JSON.parse(localStorage.getItem('sr-producer-overrides') || '{}');
+        const chgLog = JSON.parse(localStorage.getItem('sr-chg-log') || '[]');
+        const newId = await jbCreate({ locOverrides: locOv, producerOverrides: prodOv, chgLog, updatedAt: Date.now() });
+        if (newId) {
+          binId = newId;
+          localStorage.setItem(JBIN_ID_KEY, binId);
+          setStatus('ok', '동기화 DB 생성됨 ✓');
+        } else {
+          setStatus('offline', '오프라인');
+        }
+        return;
+      }
+
+      const data = await jbGet();
+      if (!data) { setStatus('offline', '오프라인'); return; }
+
+      if (data.updatedAt && data.updatedAt > lastRemoteUpdatedAt) {
+        if (data.locOverrides) {
+          localStorage.setItem('sr-loc-overrides', JSON.stringify(data.locOverrides));
+          Object.entries(data.locOverrides).forEach(([id, loc]) => {
+            const d = DATA.find(x => x.id === id);
+            if (d) d.location = loc;
+          });
+        }
+        if (data.producerOverrides) {
+          localStorage.setItem('sr-producer-overrides', JSON.stringify(data.producerOverrides));
+          Object.entries(data.producerOverrides).forEach(([id, prod]) => {
+            const d = DATA.find(x => x.id === id);
+            if (d) d.producer = prod;
+          });
+        }
+        if (Array.isArray(data.chgLog)) {
+          localStorage.setItem('sr-chg-log', JSON.stringify(data.chgLog));
+          if (typeof updateBadge === 'function') updateBadge(data.chgLog.length);
+        }
+        lastRemoteUpdatedAt = data.updatedAt;
+
+        const q = document.getElementById('search');
+        if (q && q.value && typeof renderResults === 'function') {
+          renderResults(q.value.trim());
+        }
+        if (showToastMsg && typeof showToast === 'function') showToast('☁️ 최신 데이터로 갱신');
+      } else if (data.updatedAt) {
+        lastRemoteUpdatedAt = data.updatedAt;
+      }
+
+      setStatus('ok', '동기화됨');
+      return true;
+    } catch (err) {
+      console.warn('[cloudSync] pull 실패:', err);
+      setStatus('offline', '오프라인');
+      return false;
+    } finally {
+      isPulling = false;
+    }
+  }
+
+  // 로컬 데이터를 클라우드로 올리기
+  async function push() {
+    if (isPushing) { schedulePush(); return; }
+    if (!window.editMode && !editMode) return;
+    isPushing = true;
+    setStatus('syncing', '업로드 중...');
+    try {
+      const locOv  = JSON.parse(localStorage.getItem('sr-loc-overrides') || '{}');
+      const prodOv = JSON.parse(localStorage.getItem('sr-producer-overrides') || '{}');
+      const chgLog = JSON.parse(localStorage.getItem('sr-chg-log') || '[]');
+      const updatedAt = Date.now();
+
+      // binId 없으면 먼저 생성
+      if (!binId) {
+        const newId = await jbCreate({ locOverrides: locOv, producerOverrides: prodOv, chgLog, updatedAt });
+        if (newId) {
+          binId = newId;
+          localStorage.setItem(JBIN_ID_KEY, binId);
+          lastRemoteUpdatedAt = updatedAt;
+          setStatus('ok', '저장됨 ✓');
+        } else {
+          setStatus('offline', '저장 실패');
+          if (typeof showToast === 'function') showToast('⚠️ 클라우드 저장 실패 - 로컬에는 저장됨');
+        }
+        return;
+      }
+
+      const ok = await jbSet({ locOverrides: locOv, producerOverrides: prodOv, chgLog, updatedAt });
+      if (ok) {
+        lastRemoteUpdatedAt = updatedAt;
+        setStatus('ok', '저장됨 ✓');
+        // 재고관리 Bin도 위치/생산자 업데이트
+        try {
+          const invBinId = '6a194785ddf5aa59f7734288';
+          const invR = await fetch('https://api.jsonbin.io/v3/b/' + invBinId + '/latest', { headers: { 'X-Master-Key': JBIN_KEY } });
+          if (invR.ok) {
+            let invData = ((await invR.json()).record) || [];
+            if (Array.isArray(invData)) {
+              let changed = false;
+              if (locOv) Object.entries(locOv).forEach(([id, loc]) => { const it = invData.find(i => i.id === id); if (it && it.location !== loc) { it.location = loc; changed = true; } });
+              if (prodOv) Object.entries(prodOv).forEach(([id, prod]) => { const it = invData.find(i => i.id === id); if (it && it.producer !== prod) { it.producer = prod; changed = true; } });
+              if (changed) await fetch('https://api.jsonbin.io/v3/b/' + invBinId, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': JBIN_KEY }, body: JSON.stringify(invData) });
+            }
+          }
+        } catch(e) {}
+      } else {
+        setStatus('offline', '저장 실패');
+        if (typeof showToast === 'function') showToast('⚠️ 클라우드 저장 실패 - 로컬에는 저장됨');
+      }
+    } catch (err) {
+      console.warn('[cloudSync] push 실패:', err);
+      setStatus('offline', '저장 실패');
+    } finally {
+      isPushing = false;
+    }
+  }
+
+  function schedulePush() {
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(push, PUSH_DEBOUNCE);
+  }
+  window.cloudPush = schedulePush;
+  window.cloudPull = pull;
+
+  const HOOK_FUNCS = ['saveLocation', 'saveProducer', 'deleteProducer', 'saveChgLogs'];
+  HOOK_FUNCS.forEach(fnName => {
+    const orig = window[fnName];
+    if (typeof orig !== 'function') return;
+    window[fnName] = function() {
+      const r = orig.apply(this, arguments);
+      if (window.editMode || (typeof editMode !== 'undefined' && editMode)) {
+        schedulePush();
+      }
+      return r;
+    };
+  });
+
+  const origConfirmPw = window.confirmPw;
+  if (typeof origConfirmPw === 'function') {
+    window.confirmPw = function() {
+      const v = document.getElementById('pw-input').value;
+      const r = origConfirmPw.apply(this, arguments);
+      if (window.editMode || editMode) window._editPassword = v;
+      return r;
+    };
+  }
+
+  const origToggle = window.toggleEditMode;
+  if (typeof origToggle === 'function') {
+    window.toggleEditMode = function() {
+      const wasEdit = window.editMode || editMode;
+      const r = origToggle.apply(this, arguments);
+      if (wasEdit && !(window.editMode || editMode)) window._editPassword = '';
+      return r;
+    };
+  }
+
+  window.addEventListener('load', () => {
+    setTimeout(() => { pull(false); syncFromInvBin(); }, 300);
+  });
+
+  setInterval(() => {
+    if (isPushing || pushTimer) return;
+    pull(false);
+  }, POLL_INTERVAL);
+
+  // 재고관리 Bin도 5초마다 동기화
+  setInterval(syncFromInvBin, 5000);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') pull(false);
+  });
+
+  window.addEventListener('beforeunload', () => {
+    if (pushTimer) {
+      clearTimeout(pushTimer);
+      const data = JSON.stringify({
+        locOverrides: JSON.parse(localStorage.getItem('sr-loc-overrides') || '{}'),
+        producerOverrides: JSON.parse(localStorage.getItem('sr-producer-overrides') || '{}'),
+        chgLog: JSON.parse(localStorage.getItem('sr-chg-log') || '[]'),
+        updatedAt: Date.now()
+      });
+      if (binId) {
+        fetch('https://api.jsonbin.io/v3/b/' + binId, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'X-Master-Key': JBIN_KEY },
+          body: data,
+          keepalive: true
+        });
+      }
+    }
+  });
+})();
+
+</script>
+</body>
+</html>
